@@ -1,0 +1,47 @@
+## Segredos — nunca versionar credenciais
+# A chave da API-Football vive aqui, fora do controle de versão.
+Secrets.xcconfig
+
+## macOS
+.DS_Store
+
+## Xcode — artefatos de build
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.moved-aside
+
+## Xcode — estado de usuário (layout de janelas, breakpoints, último scheme)
+## Não é código, é preferência local. Versionar isso gera conflito em toda dupla.
+xcuserdata/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+
+## Swift Package Manager
+.build/
+.swiftpm/
+# Package.resolved fica versionado de propósito: garante que a mesma versão
+# exata de cada dependência seja usada, o que importa para reprodutibilidade
+# dos resultados relatados no TCC.
+
+## Playgrounds
+timeline.xctimeline
+playground.xcworkspace
+
+## Claude Code — estado local da ferramenta
+## settings.local.json guarda permissões e preferências desta máquina, não do projeto.
+## A allowlist de domínios em .claude/apple/ fica versionada de propósito: documenta uma
+## decisão do projeto (acesso à API-Football) e vale para qualquer máquina.
+.claude/settings.local.json

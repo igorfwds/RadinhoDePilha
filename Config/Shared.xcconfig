@@ -1,0 +1,20 @@
+// Shared.xcconfig
+//
+// Settings common to every configuration, applied at project level so that the app target and
+// both test targets inherit them. Divergence between app and test targets on concurrency
+// settings is what caused the cascade of isolation errors on 25/08; keeping one source of truth
+// prevents a repeat.
+
+#include? "Secrets.xcconfig"
+
+// Base Info.plist holding custom keys. GENERATE_INFOPLIST_FILE stays on, so Xcode still
+// generates the standard keys and merges them on top of this file.
+INFOPLIST_FILE = Config/Info.plist
+
+// Modern concurrency model, as shipped by default in new Xcode 26 projects.
+//
+// Declarations without an explicit annotation are inferred as main-actor isolated. For an app
+// this is the intended default: UI work stays on the main actor without ceremony, and anything
+// that genuinely needs to leave it says so — an `actor`, or an explicit `nonisolated`.
+SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor
+SWIFT_APPROACHABLE_CONCURRENCY = YES

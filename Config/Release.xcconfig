@@ -1,0 +1,9 @@
+// Release.xcconfig
+//
+// Build settings for the Release configuration.
+//
+// Kept as a separate file even though it currently only includes the shared settings, because a
+// shipping build will eventually need its own values, and discovering that after the fact usually
+// means untangling a single shared file under time pressure.
+
+#include "Shared.xcconfig"

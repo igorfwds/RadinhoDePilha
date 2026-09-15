@@ -1,0 +1,5 @@
+// Debug.xcconfig
+//
+// Build settings for the Debug configuration.
+
+#include "Shared.xcconfig"

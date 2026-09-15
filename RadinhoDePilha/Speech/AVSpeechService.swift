@@ -1,0 +1,254 @@
+import AVFoundation
+import Foundation
+
+/// Speaks narration through the platform synthesiser.
+///
+/// An `actor` because it owns mutable state — the queue and what is currently being spoken — that
+/// is touched from the polling loop, from the interface, and from the synthesiser's own callbacks.
+/// Serialising that state is exactly what an actor is for, and it is the mechanism described in
+/// Section 3.7.4 of the theoretical background.
+///
+/// Priority handling lives here rather than in the synthesiser because `AVSpeechSynthesizer` keeps
+/// its own opaque queue that cannot be inspected or reordered. Feeding it one utterance at a time
+/// and holding the queue locally is what allows a goal to jump ahead of a substitution.
+///
+/// Deduplication is deliberately absent: the caller decides what is new. Replaying a bookmarked
+/// moment must be able to speak something already spoken.
+actor AVSpeechService: SpeechService {
+    private let policy: SpeechInterruptionPolicy
+    private let languageCode: String
+
+    /// Created on first use rather than in `init`.
+    ///
+    /// The synthesiser wrapper is isolated to the main actor, and an actor's initialiser runs
+    /// nonisolated, so it cannot be built here. Deferring also means no audio machinery is spun up
+    /// for a service that ends up never speaking.
+    private var box: SpeechSynthesizerBox?
+
+    private var queue = SpeechQueue()
+    private var currentPriority: NarrationPriority?
+    private var isPumping = false
+    private var rate: SpeechRate
+
+    init(
+        rate: SpeechRate = .normal,
+        policy: SpeechInterruptionPolicy = .above(.high),
+        languageCode: String = "pt-BR"
+    ) {
+        self.rate = rate
+        self.policy = policy
+        self.languageCode = languageCode
+    }
+
+    private func synthesizer() async -> SpeechSynthesizerBox {
+        if let box { return box }
+
+        let created = await MainActor.run { SpeechSynthesizerBox(languageCode: languageCode) }
+        box = created
+
+        return created
+    }
+
+    // MARK: - SpeechService
+
+    func speak(_ narration: Narration) async {
+        await enqueue(
+            PendingUtterance(
+                id: narration.id,
+                text: narration.text,
+                priority: narration.priority
+            )
+        )
+    }
+
+    func speakNow(_ narration: Narration) async {
+        // Replaces any earlier request rather than joining a queue behind it.
+        queue.removeOnDemand()
+
+        queue.enqueue(
+            PendingUtterance(
+                id: narration.id,
+                text: narration.text,
+                priority: narration.priority,
+                isOnDemand: true
+            )
+        )
+
+        // Cuts the current sentence off unconditionally, which is the difference from `speak`.
+        // The interruption policy governs what the *match* may interrupt; a direct request from
+        // the listener is not subject to it.
+        currentPriority = nil
+        await synthesizer().stop()
+
+        startPumpIfNeeded()
+    }
+
+    func speak(_ text: String, priority: NarrationPriority = .normal) async {
+        await enqueue(PendingUtterance(id: UUID().uuidString, text: text, priority: priority))
+    }
+
+    func stopAll() async {
+        queue.removeAll()
+        currentPriority = nil
+        await synthesizer().stop()
+    }
+
+    func setRate(_ rate: SpeechRate) async {
+        self.rate = rate
+        // Applies from the next utterance onwards. Changing the rate mid-sentence would mean
+        // cutting the sentence off and starting it again, which is worse than finishing it.
+    }
+
+    /// Prepares the audio session. Call once, before the first utterance.
+    func activate() async {
+        await synthesizer().activateAudioSession()
+    }
+
+    // MARK: - Queueing
+
+    private func enqueue(_ utterance: PendingUtterance) async {
+        queue.enqueue(utterance)
+
+        if let current = currentPriority,
+           policy.allowsInterrupting(current: current, with: utterance.priority) {
+            // Cutting the current sentence short. The pump loop resumes as soon as the
+            // synthesiser reports the cancellation, and then picks the highest priority pending.
+            await synthesizer().stop()
+        }
+
+        startPumpIfNeeded()
+    }
+
+    private func startPumpIfNeeded() {
+        guard !isPumping else { return }
+        isPumping = true
+
+        Task { [weak self] in
+            await self?.pump()
+        }
+    }
+
+    /// Speaks queued utterances, highest priority first, until the queue empties.
+    private func pump() async {
+        while let next = queue.takeNext() {
+            currentPriority = next.priority
+            await synthesizer().speak(next.text, rateMultiplier: rate.multiplier)
+            currentPriority = nil
+        }
+
+        isPumping = false
+    }
+
+}
+
+/// Holds the synthesiser and turns its delegate callbacks into an awaitable call.
+///
+/// Isolated to the main actor because `AVSpeechSynthesizer` is not `Sendable` and its delegate
+/// callbacks arrive on an unspecified thread. Pinning ownership to one actor and hopping onto it
+/// from the callbacks is what makes the whole thing safe under Swift 6 checking.
+@MainActor
+private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate {
+    private let synthesizer = AVSpeechSynthesizer()
+    private let languageCode: String
+    private var continuation: CheckedContinuation<Void, Never>?
+    private var didActivateSession = false
+
+    init(languageCode: String) {
+        self.languageCode = languageCode
+        super.init()
+        synthesizer.delegate = self
+    }
+
+    /// Configures the audio session for spoken content.
+    ///
+    /// `.duckOthers` lowers other audio instead of stopping it, which matters because a listener
+    /// may well be following the radio broadcast at the same time. `.spokenAudio` tells the system
+    /// this is speech rather than music, so it routes and interacts with other audio accordingly.
+    func activateAudioSession() {
+        guard !didActivateSession else { return }
+
+        do {
+            let session = AVAudioSession.sharedInstance()
+            try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+            try session.setActive(true)
+            didActivateSession = true
+        } catch {
+            // Speech still works with the default session in most cases, so a failure here
+            // degrades quality rather than function. Worth surfacing in logs once there is a
+            // logging facility; not worth failing the narration over.
+        }
+    }
+
+    func speak(_ text: String, rateMultiplier: Float) async {
+        await withCheckedContinuation { continuation in
+            // A pending continuation means a previous utterance never reported completion.
+            // Resuming it here keeps the queue moving instead of deadlocking the pump.
+            resumePending()
+            self.continuation = continuation
+
+            let utterance = AVSpeechUtterance(string: text)
+            utterance.voice = Self.bestVoice(for: languageCode)
+            utterance.rate = Self.clampedRate(multiplier: rateMultiplier)
+            utterance.postUtteranceDelay = 0.15
+
+            synthesizer.speak(utterance)
+        }
+    }
+
+    func stop() {
+        synthesizer.stopSpeaking(at: .immediate)
+        // `didCancel` is expected to fire, but resuming defensively avoids a stall if it does not.
+        resumePending()
+    }
+
+    // MARK: - AVSpeechSynthesizerDelegate
+
+    nonisolated func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
+        didFinish utterance: AVSpeechUtterance
+    ) {
+        Task { @MainActor [weak self] in self?.resumePending() }
+    }
+
+    nonisolated func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
+        didCancel utterance: AVSpeechUtterance
+    ) {
+        Task { @MainActor [weak self] in self?.resumePending() }
+    }
+
+    // MARK: - Helpers
+
+    private func resumePending() {
+        continuation?.resume()
+        continuation = nil
+    }
+
+    /// Picks the best installed voice for the language.
+    ///
+    /// Quality is not cosmetic here: this voice speaks continuously for ninety minutes, and the
+    /// listener depends on it entirely. Prefers premium, then enhanced, then whatever exists.
+    private static func bestVoice(for languageCode: String) -> AVSpeechSynthesisVoice? {
+        let candidates = AVSpeechSynthesisVoice.speechVoices()
+            .filter { $0.language == languageCode }
+
+        if let premium = candidates.first(where: { $0.quality == .premium }) { return premium }
+        if let enhanced = candidates.first(where: { $0.quality == .enhanced }) { return enhanced }
+
+        return candidates.first ?? AVSpeechSynthesisVoice(language: languageCode)
+    }
+
+    /// Applies the multiplier to the platform default and keeps the result within valid bounds.
+    ///
+    /// The bounds are global constants rather than members of `AVSpeechUtterance`, and the property
+    /// pins out-of-range values silently — clamping here makes the ceiling explicit instead of
+    /// letting a "very fast" setting quietly behave like "fast".
+    private static func clampedRate(multiplier: Float) -> Float {
+        let desired = AVSpeechUtteranceDefaultSpeechRate * multiplier
+
+        return min(
+            max(desired, AVSpeechUtteranceMinimumSpeechRate),
+            AVSpeechUtteranceMaximumSpeechRate
+        )
+    }
+}

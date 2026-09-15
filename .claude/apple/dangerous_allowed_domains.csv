@@ -1,0 +1,8 @@
+# Domains allowed for this project only.
+# Format: hostname,reason
+#
+# Scoped here rather than in ~/.claude/apple/ so the exception stays with the TCC artefact
+# and does not widen network access for unrelated work.
+
+www.api-football.com,API-Football v3 documentation for the match data provider
+api-football.com,API-Football apex domain, redirects to www
