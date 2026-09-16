@@ -30,6 +30,9 @@ actor AVSpeechService: SpeechService {
     private var isPumping = false
     private var rate: SpeechRate
 
+    /// Voice chosen by the listener, or `nil` for automatic selection.
+    private var voiceIdentifier: String?
+
     init(
         rate: SpeechRate = .normal,
         policy: SpeechInterruptionPolicy = .above(.high),
@@ -62,10 +65,7 @@ actor AVSpeechService: SpeechService {
     }
 
     func speakNow(_ narration: Narration) async {
-        // Replaces any earlier request rather than joining a queue behind it.
-        queue.removeOnDemand()
-
-        queue.enqueue(
+        await speakNow(
             PendingUtterance(
                 id: narration.id,
                 text: narration.text,
@@ -73,24 +73,46 @@ actor AVSpeechService: SpeechService {
                 isOnDemand: true
             )
         )
-
-        // Cuts the current sentence off unconditionally, which is the difference from `speak`.
-        // The interruption policy governs what the *match* may interrupt; a direct request from
-        // the listener is not subject to it.
-        currentPriority = nil
-        await synthesizer().stop()
-
-        startPumpIfNeeded()
     }
 
     func speak(_ text: String, priority: NarrationPriority = .normal) async {
         await enqueue(PendingUtterance(id: UUID().uuidString, text: text, priority: priority))
     }
 
+    func speakNow(_ text: String, priority: NarrationPriority = .normal) async {
+        await speakNow(
+            PendingUtterance(
+                id: UUID().uuidString,
+                text: text,
+                priority: priority,
+                isOnDemand: true
+            )
+        )
+    }
+
+    /// Cuts off what is being said and speaks this instead.
+    private func speakNow(_ utterance: PendingUtterance) async {
+        // Replaces any earlier request rather than joining a queue behind it: tapping twice means
+        // the first answer is no longer wanted.
+        queue.removeOnDemand()
+        queue.enqueue(utterance)
+
+        // Unconditional, which is the difference from `speak`. The interruption policy governs
+        // what the *match* may interrupt; a direct request from the listener is not subject to it.
+        currentPriority = nil
+        await synthesizer().stop()
+
+        startPumpIfNeeded()
+    }
+
     func stopAll() async {
         queue.removeAll()
         currentPriority = nil
         await synthesizer().stop()
+    }
+
+    func setVoice(identifier: String?) async {
+        voiceIdentifier = identifier
     }
 
     func setRate(_ rate: SpeechRate) async {
@@ -132,7 +154,11 @@ actor AVSpeechService: SpeechService {
     private func pump() async {
         while let next = queue.takeNext() {
             currentPriority = next.priority
-            await synthesizer().speak(next.text, rateMultiplier: rate.multiplier)
+            await synthesizer().speak(
+                next.text,
+                rateMultiplier: rate.multiplier,
+                voiceIdentifier: voiceIdentifier
+            )
             currentPriority = nil
         }
 
@@ -179,7 +205,7 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
         }
     }
 
-    func speak(_ text: String, rateMultiplier: Float) async {
+    func speak(_ text: String, rateMultiplier: Float, voiceIdentifier: String? = nil) async {
         await withCheckedContinuation { continuation in
             // A pending continuation means a previous utterance never reported completion.
             // Resuming it here keeps the queue moving instead of deadlocking the pump.
@@ -187,7 +213,7 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
             self.continuation = continuation
 
             let utterance = AVSpeechUtterance(string: text)
-            utterance.voice = Self.bestVoice(for: languageCode)
+            utterance.voice = Self.voice(identifier: voiceIdentifier, language: languageCode)
             utterance.rate = Self.clampedRate(multiplier: rateMultiplier)
             utterance.postUtteranceDelay = 0.15
 
@@ -228,6 +254,20 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
     ///
     /// Quality is not cosmetic here: this voice speaks continuously for ninety minutes, and the
     /// listener depends on it entirely. Prefers premium, then enhanced, then whatever exists.
+    /// Resolves the voice to use: the chosen one when still installed, otherwise the best
+    /// available.
+    ///
+    /// Falling back matters because a chosen voice can disappear — the listener may delete the
+    /// download in system settings, and a stored identifier would then resolve to nothing and
+    /// leave the app silent.
+    private static func voice(identifier: String?, language: String) -> AVSpeechSynthesisVoice? {
+        if let identifier, let chosen = AVSpeechSynthesisVoice(identifier: identifier) {
+            return chosen
+        }
+
+        return bestVoice(for: language)
+    }
+
     private static func bestVoice(for languageCode: String) -> AVSpeechSynthesisVoice? {
         let candidates = AVSpeechSynthesisVoice.speechVoices()
             .filter { $0.language == languageCode }

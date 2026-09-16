@@ -65,14 +65,20 @@ final class MatchNarrationViewModel {
     // MARK: - Dependencies
 
     private let provider: MatchDataProvider
-    private let engine: any NarrationEngine
     private let speech: any SpeechService
+
+    /// Not `let`, because the listener can change persona mid-match.
+    private var engine: any NarrationEngine
 
     /// Gap between polls.
     ///
-    /// Injected because the right value differs by provider: the API-Football plan bills per
-    /// request and tolerates thirty seconds, while the simulated provider needs a much shorter
-    /// gap for the match to be heard moving at all.
+    /// Injected because the right value differs by provider: the simulated provider needs a short
+    /// gap for the match to be heard moving, while API-Football bills per request.
+    ///
+    /// The default follows the vendor's own guidance — one call per minute for fixtures in
+    /// progress — rather than a guess. Their data refreshes every fifteen seconds, so polling
+    /// faster buys little and risks the firewall: exceeding the per-minute rate can get an account
+    /// blocked without notice.
     private let pollInterval: Duration
 
     /// Failures tolerated before the loop gives up.
@@ -83,7 +89,7 @@ final class MatchNarrationViewModel {
         engine: any NarrationEngine = TemplateNarrationEngine(),
         speech: any SpeechService,
         rate: SpeechRate = .normal,
-        pollInterval: Duration = .seconds(30)
+        pollInterval: Duration = .seconds(60)
     ) {
         self.provider = provider
         self.engine = engine
@@ -129,21 +135,23 @@ final class MatchNarrationViewModel {
         guard !isNarrating else { return }
         guard let match else { return }
 
-        isNarrating = true
-
         // Everything already on screen counts as heard. This is the whole fix: the backlog is
         // acknowledged silently instead of being recited out of order.
         spokenIDs.formUnion(narrations.map(\.id))
 
         guard match.isLive else {
+            // Cuts off whatever is queued. Hearing "esta partida já terminou" only after the
+            // remaining commentary drains makes the button look broken — the answer has to
+            // arrive while the listener still connects it to the tap.
             await announceNotLive(match)
-            isNarrating = false
             return
         }
 
+        isNarrating = true
+
         // Confirming out loud is not decoration. Play that produces silence until the next event
         // is indistinguishable from a frozen app for someone who cannot see the button change.
-        await speech.speak("Narração ao vivo.", priority: .normal)
+        await speech.speakNow("Narração ao vivo.", priority: .normal)
 
         startLiveLoop(matchID: match.id)
     }
@@ -237,7 +245,7 @@ final class MatchNarrationViewModel {
         }
 
         errorMessage = nil
-        await speech.speak(message, priority: .high)
+        await speech.speakNow(message, priority: .high)
     }
 
     private func handlePollFailure() async {
@@ -298,5 +306,22 @@ final class MatchNarrationViewModel {
     /// Whether a narration has already been spoken, for the interface to mark it.
     func wasSpoken(_ narration: Narration) -> Bool {
         spokenIDs.contains(narration.id)
+    }
+
+    // MARK: - Persona
+
+    /// Switches the narrating persona and rewords what is on screen.
+    ///
+    /// Re-narrating the existing events is the point: a listener who changes persona expects the
+    /// match they are reading to be phrased the new way, not only the events still to come.
+    ///
+    /// ``spokenIDs`` is left untouched. The events already happened and were already heard —
+    /// rewording them is not a reason to say them again, and re-speaking a match on a settings
+    /// change would be the same defect that made play recite the backlog.
+    func setPersona(_ persona: NarratorPersona) {
+        engine = TemplateNarrationEngine(persona: persona)
+
+        guard let match else { return }
+        narrations = match.events.compactMap { engine.narrate($0, in: match) }
     }
 }

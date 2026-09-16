@@ -23,11 +23,32 @@ nonisolated protocol SpeechService: Sendable {
     /// Speaks arbitrary text, for interface feedback that is not a match event.
     func speak(_ text: String, priority: NarrationPriority) async
 
+    /// Speaks arbitrary text at once, cutting off whatever is being said.
+    ///
+    /// Every answer to a tap goes through here. A control that replies only after the queue
+    /// drains reads as a control that did nothing — and on a screen the listener cannot see,
+    /// there is no other evidence that the tap registered.
+    func speakNow(_ text: String, priority: NarrationPriority) async
+
     /// Stops what is being spoken and clears anything queued.
     func stopAll() async
 
     /// Rate at which speech is produced, as a fraction of the platform's normal rate.
     func setRate(_ rate: SpeechRate) async
+
+    /// Chooses which installed voice narrates.
+    ///
+    /// Passing `nil` restores automatic selection, which prefers the best quality installed.
+    /// Applies from the next utterance: swapping voices mid-sentence would mean cutting the
+    /// sentence off and starting it again, which is worse than finishing it.
+    func setVoice(identifier: String?) async
+
+    /// Prepares the audio session, before anything is spoken.
+    ///
+    /// Part of the contract rather than an implementation detail because callers must be able to
+    /// do this without knowing which service they hold. Configuring the session lazily on the
+    /// first utterance would make the first goal of a match pay for the setup.
+    func activate() async
 }
 
 /// Speech rate, exposed as named steps rather than raw float values.

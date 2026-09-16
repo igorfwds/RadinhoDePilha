@@ -10,9 +10,14 @@ actor SpeechServiceSpy: SpeechService {
     private(set) var spokenText: [String] = []
     private(set) var stopCount = 0
     private(set) var appliedRates: [SpeechRate] = []
+    private(set) var appliedVoices: [String?] = []
+    private(set) var activateCount = 0
 
     /// Narration requested through ``speakNow(_:)``, which must interrupt rather than queue.
     private(set) var interrupting: [Narration] = []
+
+    /// Interface feedback that must interrupt too, for the same reason.
+    private(set) var interruptingText: [String] = []
 
     func speak(_ narration: Narration) async {
         spoken.append(narration)
@@ -27,12 +32,25 @@ actor SpeechServiceSpy: SpeechService {
         spokenText.append(text)
     }
 
+    func speakNow(_ text: String, priority: NarrationPriority) async {
+        interruptingText.append(text)
+        spokenText.append(text)
+    }
+
     func stopAll() async {
         stopCount += 1
     }
 
     func setRate(_ rate: SpeechRate) async {
         appliedRates.append(rate)
+    }
+
+    func setVoice(identifier: String?) async {
+        appliedVoices.append(identifier)
+    }
+
+    func activate() async {
+        activateCount += 1
     }
 }
 
@@ -97,7 +115,7 @@ struct MatchNarrationViewModelTests {
     private func makeViewModel(
         provider: MatchDataProvider = InMemoryMatchDataProvider.sample(),
         speech: SpeechServiceSpy = SpeechServiceSpy(),
-        pollInterval: Duration = .seconds(30)
+        pollInterval: Duration = .seconds(60)
     ) -> (MatchNarrationViewModel, SpeechServiceSpy) {
         (
             MatchNarrationViewModel(provider: provider, speech: speech, pollInterval: pollInterval),
@@ -241,6 +259,30 @@ struct MatchNarrationViewModelTests {
         #expect(!viewModel.isNarrating)
         #expect(await spy.spoken.isEmpty)
         #expect(await spy.spokenText.contains { $0.contains("terminou") })
+    }
+
+    @Test("Answering a tap interrupts the queue instead of waiting for it to drain")
+    func tapAnswersInterrupt() async {
+        // Reported from use: with commentary still queued, pressing play on a finished match
+        // only said "esta partida já terminou" once the queue ran out — long enough after the
+        // tap that the two no longer seemed related.
+        let (viewModel, spy) = makeViewModel()
+        await viewModel.load(matchID: SampleMatches.finishedWithRedCard.id)
+
+        await viewModel.startNarrating()
+
+        #expect(await spy.interruptingText.contains { $0.contains("terminou") })
+    }
+
+    @Test("Starting live narration confirms through an interrupting utterance")
+    func liveConfirmationInterrupts() async {
+        let (viewModel, spy) = makeViewModel()
+        await viewModel.load(matchID: SampleMatches.liveComeback.id)
+
+        await viewModel.startNarrating()
+        await viewModel.stopNarrating()
+
+        #expect(await spy.interruptingText.contains { $0.contains("ao vivo") })
     }
 
     // MARK: - Summary

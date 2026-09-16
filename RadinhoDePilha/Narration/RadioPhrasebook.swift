@@ -46,7 +46,16 @@ nonisolated enum MatchPeriod: Sendable {
 /// known. It is **not** derived from a transcribed corpus. Grounding it in a recorded and
 /// transcribed broadcast remains open work, and would strengthen the dissertation considerably.
 nonisolated struct RadioPhrasebook: Sendable {
-    init() {}
+    /// Style this phrasebook speaks in.
+    ///
+    /// Only some passages vary. Goals, sendings-off and time markers carry the emotion of a
+    /// broadcast and so differ by persona; the scoreline and a substitution are statements of
+    /// fact, and rewriting them per persona would add variance without adding character.
+    let persona: NarratorPersona
+
+    init(persona: NarratorPersona = .classic) {
+        self.persona = persona
+    }
 
     // MARK: - Time reference
 
@@ -56,6 +65,15 @@ nonisolated struct RadioPhrasebook: Sendable {
                 "Aos \(minute) mais \(stoppage), nos acréscimos.",
                 "Nos acréscimos do \(period.spokenName), aos \(minute) mais \(stoppage).",
                 "Minuto \(minute) mais \(stoppage)."
+            ]
+        }
+
+        if persona == .passionate {
+            // Shorter, because the point is to get to the event.
+            return [
+                "Aos \(minute)!",
+                "Minuto \(minute)!",
+                "Aos \(minute) do \(period.spokenName)!"
             ]
         }
 
@@ -81,60 +99,174 @@ nonisolated struct RadioPhrasebook: Sendable {
     // MARK: - Goals
 
     func goalAnnouncement(team: String, isPenalty: Bool) -> [String] {
-        if isPenalty {
+        switch persona {
+        case .classic:
+            if isPenalty {
+                return [
+                    "Gol de pênalti do \(team)!",
+                    "Na cobrança de pênalti, gol do \(team)!",
+                    "Converteu! Gol do \(team) de pênalti!"
+                ]
+            }
+
             return [
-                "Gol de pênalti do \(team)!",
-                "Na cobrança de pênalti, gol do \(team)!",
-                "Converteu! Gol do \(team) de pênalti!"
+                "Gol do \(team)!",
+                "É gol do \(team)!",
+                "Balançou a rede! Gol do \(team)!",
+                "Bola na rede! Gol do \(team)!",
+                "Bola no fundo do gol! Gol do \(team)!"
+            ]
+
+        case .passionate:
+            // The drawn-out "gooool" is the defining sound of Brazilian radio football. Written
+            // with repeated vowels on purpose: the synthesiser lengthens the syllable, which is
+            // the closest it gets to the real thing.
+            if isPenalty {
+                return [
+                    "Gooool! De pênalti, gol do \(team)!",
+                    "Converteu, converteu! Gooool do \(team)!",
+                    "Da marca da cal, é gooool do \(team)!"
+                ]
+            }
+
+            return [
+                "Gooool do \(team)!",
+                "Gooool! Que gol do \(team)!",
+                "Explode a torcida! Gooool do \(team)!",
+                "Balançou a rede, senhoras e senhores! Gooool do \(team)!"
+            ]
+
+        case .analytical:
+            if isPenalty {
+                return [
+                    "Gol do \(team), em cobrança de pênalti.",
+                    "Pênalti convertido pelo \(team)."
+                ]
+            }
+
+            return [
+                "Gol do \(team).",
+                "O \(team) marca.",
+                "Gol registrado para o \(team)."
             ]
         }
-
-        return [
-            "Gol do \(team)!",
-            "É gol do \(team)!",
-            "Balançou a rede! Gol do \(team)!",
-            "Bola na rede! Gol do \(team)!",
-            "Bola no fundo do gol! Gol do \(team)!"
-        ]
     }
 
     func meaning(_ context: GoalContext, scorer: String) -> [String] {
+        if persona == .passionate {
+            return passionateMeaning(context, scorer: scorer)
+        }
+
+        if persona == .analytical {
+            return analyticalMeaning(context, scorer: scorer)
+        }
+
         switch context {
         case .opensScore:
-            [
+            return [
                 "\(scorer) abre o placar.",
                 "\(scorer) inaugura o marcador.",
                 "\(scorer) faz o primeiro do jogo."
             ]
         case .equalises:
-            [
+            return [
                 "\(scorer) empata o jogo.",
                 "\(scorer) deixa tudo igual.",
                 "\(scorer) marca e o jogo está empatado."
             ]
         case .comeback:
-            [
+            return [
                 "\(scorer) marca e é a virada!",
                 "\(scorer) vira o jogo!",
                 "Estava atrás e agora está na frente: \(scorer) completa a virada!"
             ]
         case .takesLead:
-            [
+            return [
                 "\(scorer) desempata o jogo.",
                 "\(scorer) desfaz o empate.",
                 "\(scorer) marca e o empate acabou."
             ]
         case .extendsLead:
-            [
+            return [
                 "\(scorer) amplia a vantagem.",
                 "\(scorer) aumenta a diferença.",
                 "\(scorer) marca mais um e a vantagem cresce."
             ]
         case .reducesDeficit:
-            [
+            return [
                 "\(scorer) diminui a desvantagem.",
                 "\(scorer) reduz a diferença.",
                 "\(scorer) marca e a desvantagem diminui."
+            ]
+        }
+    }
+
+    private func passionateMeaning(_ context: GoalContext, scorer: String) -> [String] {
+        switch context {
+        case .opensScore:
+            [
+                "\(scorer) abre o placar!",
+                "\(scorer) faz o primeiro, e que festa!"
+            ]
+        case .equalises:
+            [
+                "\(scorer) empata! Está tudo igual!",
+                "\(scorer) deixa tudo igual! Jogo novo!"
+            ]
+        case .comeback:
+            [
+                "É a virada! \(scorer) vira o jogo!",
+                "Virou! \(scorer) completa a virada, e o estádio vem abaixo!"
+            ]
+        case .takesLead:
+            [
+                "\(scorer) desempata! Está na frente!",
+                "Acabou o empate! \(scorer) põe na frente!"
+            ]
+        case .extendsLead:
+            [
+                "\(scorer) amplia! Que vantagem!",
+                "Mais um! \(scorer) aumenta a diferença!"
+            ]
+        case .reducesDeficit:
+            [
+                "\(scorer) diminui! Ainda dá!",
+                "\(scorer) reduz a diferença! Voltou a acreditar!"
+            ]
+        }
+    }
+
+    private func analyticalMeaning(_ context: GoalContext, scorer: String) -> [String] {
+        switch context {
+        case .opensScore:
+            [
+                "\(scorer) abriu o placar.",
+                "Primeiro gol da partida, de \(scorer)."
+            ]
+        case .equalises:
+            [
+                "\(scorer) igualou o placar.",
+                "Gol de empate, marcado por \(scorer)."
+            ]
+        case .comeback:
+            [
+                "\(scorer) completou a virada.",
+                "Com o gol de \(scorer), a equipe que estava atrás passou à frente."
+            ]
+        case .takesLead:
+            [
+                "\(scorer) desfez o empate.",
+                "Gol que rompe a igualdade, de \(scorer)."
+            ]
+        case .extendsLead:
+            [
+                "\(scorer) ampliou a vantagem.",
+                "A diferença aumenta com o gol de \(scorer)."
+            ]
+        case .reducesDeficit:
+            [
+                "\(scorer) reduziu a desvantagem.",
+                "A diferença diminui com o gol de \(scorer)."
             ]
         }
     }

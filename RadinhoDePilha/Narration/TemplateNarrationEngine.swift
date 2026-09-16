@@ -21,6 +21,18 @@ nonisolated struct TemplateNarrationEngine: NarrationEngine {
         self.phrasebook = phrasebook
     }
 
+    /// Builds an engine narrating in the given persona.
+    ///
+    /// The persona reaches the wording and nothing else: match logic, priorities and goal-context
+    /// classification are identical across personas. That is deliberate, and it is what lets the
+    /// same events be narrated three ways and compared under one set of tests.
+    init(persona: NarratorPersona) {
+        self.init(phrasebook: RadioPhrasebook(persona: persona))
+    }
+
+    /// Persona this engine narrates in.
+    var persona: NarratorPersona { phrasebook.persona }
+
     func narrate(_ event: MatchEvent, in match: Match) -> Narration? {
         guard let text = text(for: event, in: match) else { return nil }
 
