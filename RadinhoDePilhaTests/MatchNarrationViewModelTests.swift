@@ -212,10 +212,11 @@ struct MatchNarrationViewModelTests {
         #expect(await !spy.spokenText.isEmpty)
     }
 
-    @Test("Goals are handed to the speech service before lesser events")
-    func goalsAreSpokenFirst() async {
-        // Priority still governs, but only among events arriving in the same cycle: here a
-        // substitution at 61 and a penalty at 66 appear together, and the goal goes first.
+    @Test("Events arriving together are narrated in the order they happened")
+    func simultaneousEventsStayChronological() async {
+        // Priority used to reorder these, so the penalty at 66 was announced before the
+        // substitution at 61. Reported from use: the narration has to follow the timeline,
+        // one moment after another, because the sentences carry the running score.
         let states = liveStates(atOffsets: [0, 7])
         let provider = ScriptedMatchDataProvider(states: states)
         let (viewModel, spy) = makeViewModel(provider: provider, pollInterval: .milliseconds(10))
@@ -226,9 +227,9 @@ struct MatchNarrationViewModelTests {
         await waitUntil { await spy.spoken.count >= 2 }
         await viewModel.stopNarrating()
 
-        let spoken = await spy.spoken
-        #expect(spoken.count >= 2)
-        #expect(spoken.first?.priority == .critical)
+        let minutes = await spy.spoken.map(\.minute)
+        #expect(minutes == minutes.sorted())
+        #expect(minutes.first == 61)
     }
 
     @Test("Events arriving while live are narrated as they arrive")

@@ -62,16 +62,19 @@ struct SpeechQueueTests {
         #expect(queue.isEmpty)
     }
 
-    @Test("The most urgent utterance comes out first")
-    func mostUrgentComesFirst() {
+    @Test("Match events come out in the order they arrived, whatever their priority")
+    func eventsKeepChronologicalOrder() {
+        // Priority used to reorder here, so a goal reported alongside an earlier booking was
+        // spoken first. Heard rather than read that is disorienting: the sentences carry the
+        // running score, so hearing them out of order means hearing the score move backwards.
         var queue = SpeechQueue()
         queue.enqueue(utterance("sub", .normal))
         queue.enqueue(utterance("goal", .critical))
         queue.enqueue(utterance("card", .high))
 
+        #expect(queue.takeNext()?.id == "sub")
         #expect(queue.takeNext()?.id == "goal")
         #expect(queue.takeNext()?.id == "card")
-        #expect(queue.takeNext()?.id == "sub")
         #expect(queue.isEmpty)
     }
 
@@ -87,14 +90,42 @@ struct SpeechQueueTests {
         #expect(queue.takeNext()?.id == "second")
     }
 
-    @Test("A late arrival of higher priority overtakes what is waiting")
-    func lateHighPriorityOvertakes() {
+    @Test("A late goal waits its turn instead of overtaking")
+    func lateGoalDoesNotOvertake() {
         var queue = SpeechQueue()
         queue.enqueue(utterance("sub", .normal))
         queue.enqueue(utterance("period", .normal))
         queue.enqueue(utterance("goal", .critical))
 
-        #expect(queue.takeNext()?.id == "goal")
+        #expect(queue.takeNext()?.id == "sub")
+    }
+
+    @Test("Interrupting keeps only the newest event, so resuming lands on the present")
+    func interruptingKeepsNewestEvent() {
+        // While the listener asked for something else the match carried on. Coming back to a
+        // backlog of stale commentary is not what "live" means.
+        var queue = SpeechQueue()
+        queue.enqueue(utterance("old", .normal))
+        queue.enqueue(utterance("older-still", .high))
+        queue.enqueue(utterance("newest", .normal))
+
+        queue.keepOnlyLatestEvent()
+
+        #expect(queue.count == 1)
+        #expect(queue.takeNext()?.id == "newest")
+    }
+
+    @Test("Interrupting does not discard what the listener asked for")
+    func interruptingSparesRequests() {
+        var queue = SpeechQueue()
+        queue.enqueue(utterance("pedido", .normal, onDemand: true))
+        queue.enqueue(utterance("evento", .normal))
+
+        queue.keepOnlyLatestEvent()
+
+        #expect(queue.count == 2)
+        // The request still goes first.
+        #expect(queue.takeNext()?.id == "pedido")
     }
 
     @Test("Discarding below a threshold keeps the important ones")

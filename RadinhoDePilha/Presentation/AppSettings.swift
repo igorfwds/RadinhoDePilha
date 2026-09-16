@@ -81,13 +81,16 @@ final class AppSettings {
         voiceIdentifier = defaults.string(forKey: Keys.voice)
     }
 
-    /// The voice currently in use, resolved against what is actually installed.
+    /// The voice in use, resolved against a list of installed voices.
     ///
-    /// A stored identifier can go stale: the listener may delete the voice download in system
-    /// settings. Resolving through the catalogue means the screen shows what will really be heard.
-    var resolvedVoice: InstalledVoice? {
-        let installed = VoiceCatalog.available()
-
+    /// Takes the list as an argument instead of querying the catalogue itself. Reading the
+    /// catalogue means asking the system for every installed voice — 180 of them on a typical
+    /// device — and this value is consulted once per row while a list renders. Doing that lookup
+    /// here made the settings screen visibly stutter.
+    ///
+    /// Resolving against what is installed still matters: a stored identifier goes stale when the
+    /// listener deletes the voice download in system settings.
+    func resolvedVoice(among installed: [InstalledVoice]) -> InstalledVoice? {
         if let voiceIdentifier, let match = installed.first(where: { $0.id == voiceIdentifier }) {
             return match
         }
