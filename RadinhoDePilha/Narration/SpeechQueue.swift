@@ -28,9 +28,9 @@ nonisolated struct PendingUtterance: Hashable, Sendable {
 /// narrative, and the sentences carry the running score inside them, so hearing them out of order
 /// means hearing the score move backwards.
 ///
-/// Priority survives for the two jobs it is actually good at — deciding what may cut off speech in
-/// progress, and what may be dropped when the queue floods — but it no longer reorders the
-/// timeline. Events leave this queue in the order they arrived, which is the order they happened.
+/// Priority survives for the two jobs it is actually good at: deciding what may cut off speech in
+/// progress, and what may be dropped when the queue floods. It no longer reorders the timeline.
+/// Events leave this queue in the order they arrived, which is the order they happened.
 ///
 /// Anything the listener asked for still jumps ahead of everything, because a control that answers
 /// late reads as a control that did nothing.
@@ -47,6 +47,16 @@ nonisolated struct SpeechQueue: Sendable {
 
     mutating func enqueue(_ utterance: PendingUtterance) {
         items.append(utterance)
+    }
+
+    /// Puts an utterance at the front, ahead of everything waiting.
+    ///
+    /// Used to restart a sentence that was cut off by a settings change: the listener changed the
+    /// speed or the voice mid-sentence, and hearing that sentence again at the new setting is the
+    /// point. Dropping it would lose the moment; finishing it at the old setting would make the
+    /// control feel like it did nothing.
+    mutating func prepend(_ utterance: PendingUtterance) {
+        items.insert(utterance, at: items.startIndex)
     }
 
     /// Removes and returns the next utterance: a listener request if one is waiting, otherwise the
@@ -74,7 +84,7 @@ nonisolated struct SpeechQueue: Sendable {
     /// Keeps only the most recent match event, discarding the ones queued behind it.
     ///
     /// Called when the listener interrupts. While they were asking for something else the match
-    /// carried on, and returning to a backlog of stale commentary is not what "live" means — they
+    /// carried on, and returning to a backlog of stale commentary is not what "live" means. They
     /// want where the match *is*, not a recap of the seconds they missed. The newest event is kept
     /// rather than none, so resuming says something instead of falling silent.
     ///

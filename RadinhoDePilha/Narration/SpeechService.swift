@@ -16,8 +16,8 @@ nonisolated protocol SpeechService: Sendable {
     ///
     /// Distinct from ``speak(_:)`` because a tap is a question, and answering it after the current
     /// sentence finishes reads as the app ignoring the tap. Any earlier on-demand request is
-    /// dropped — asking for a second moment means the first is no longer wanted — while queued
-    /// match events survive, since losing a goal to a replay would lose it permanently.
+    /// dropped, since asking for a second moment means the first is no longer wanted. Queued match
+    /// events survive, because losing a goal to a replay would lose it permanently.
     func speakNow(_ narration: Narration) async
 
     /// Speaks arbitrary text, for interface feedback that is not a match event.
@@ -25,9 +25,9 @@ nonisolated protocol SpeechService: Sendable {
 
     /// Speaks arbitrary text at once, cutting off whatever is being said.
     ///
-    /// Every answer to a tap goes through here. A control that replies only after the queue
-    /// drains reads as a control that did nothing — and on a screen the listener cannot see,
-    /// there is no other evidence that the tap registered.
+    /// Every answer to a tap goes through here. A control that replies only after the queue drains
+    /// reads as a control that did nothing, and on a screen the listener cannot see, there is no
+    /// other evidence that the tap registered.
     func speakNow(_ text: String, priority: NarrationPriority) async
 
     /// Stops what is being spoken and clears anything queued.

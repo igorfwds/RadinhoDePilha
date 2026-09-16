@@ -38,11 +38,50 @@ nonisolated struct TemplateNarrationEngine: NarrationEngine {
 
         return Narration(
             id: event.id,
-            text: text,
+            text: withoutRepeatedTimeMarker(text, for: event, in: match),
             priority: priority(for: event.kind),
             minute: event.minute,
             stoppageMinute: event.stoppageMinute
         )
+    }
+
+    /// Drops the opening time reference when the previous event happened at the same instant.
+    ///
+    /// Real commentary states the clock once and keeps talking. Repeating "aos 58 do segundo tempo"
+    /// before each of four events from minute 58 sounds like a machine reading a table, and it
+    /// spends the listener's only channel on information they already have. The reference returns
+    /// as soon as the clock moves.
+    ///
+    /// Implemented by removing the prefix rather than by suppressing it during construction, which
+    /// would mean threading the match through all seven sentence builders. The marker is picked
+    /// deterministically, so regenerating it here yields exactly the string that was prepended.
+    private func withoutRepeatedTimeMarker(
+        _ text: String,
+        for event: MatchEvent,
+        in match: Match
+    ) -> String {
+        guard sharesInstantWithPrevious(event, in: match) else { return text }
+
+        let marker = timeMarker(for: event)
+        guard !marker.isEmpty, text.hasPrefix(marker) else { return text }
+
+        return String(text.dropFirst(marker.count))
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Whether the event immediately before this one happened at the same instant.
+    ///
+    /// Compares regulation and stoppage minute together, so 45+1 and 45+3 count as different
+    /// moments even though both read as "45".
+    private func sharesInstantWithPrevious(_ event: MatchEvent, in match: Match) -> Bool {
+        guard let index = match.events.firstIndex(where: { $0.id == event.id }),
+              index > match.events.startIndex
+        else { return false }
+
+        let previous = match.events[index - 1]
+
+        return previous.minute == event.minute
+            && (previous.stoppageMinute ?? 0) == (event.stoppageMinute ?? 0)
     }
 
     /// Classifies what a goal means for the side that scored it.
@@ -146,7 +185,7 @@ nonisolated private extension TemplateNarrationEngine {
     ///
     /// Radio commentary alternates between the two, and reproducing that alternation is part of
     /// sounding like radio. The salt is keyed on the team rather than on the sentence position, so
-    /// that every mention of the same side within one narration uses the same form — "Gol do
+    /// that every mention of the same side within one narration uses the same form, "Gol do
     /// Timbu" followed by "o Náutico fica com dez" would make a listener wonder whether two
     /// different clubs were involved.
     func spokenName(of team: Team, for event: MatchEvent) -> String {
@@ -165,8 +204,8 @@ nonisolated private extension TemplateNarrationEngine {
     /// Identity of a summary, and the seed for its wording.
     ///
     /// Built from the match state rather than from the clock, so that summarising the same
-    /// situation twice produces the same passage — testable, and reassuring to a listener who
-    /// asks again a few seconds later — while a changed score or minute yields fresh wording.
+    /// situation twice produces the same passage, testable, and reassuring to a listener who
+    /// asks again a few seconds later, while a changed score or minute yields fresh wording.
     func summaryKey(for match: Match) -> String {
         "summary-\(match.id)-\(match.score.home)-\(match.score.away)-\(match.elapsedMinutes ?? -1)-\(match.status.rawValue)"
     }
@@ -175,12 +214,20 @@ nonisolated private extension TemplateNarrationEngine {
         switch match.status {
         case .scheduled:
             pick(phrasebook.summaryNotStarted(), key: key + "-stage")
-        case .halfTime:
+        case .halfTime, .breakTime:
             pick(phrasebook.summaryHalfTime(), key: key + "-stage")
-        case .finished:
+        case .finished, .abandoned, .awarded:
             pick(phrasebook.summaryFinished(), key: key + "-stage")
         case .firstHalf, .secondHalf, .extraTime, .penaltyShootout:
             elapsedStageSentence(for: match, key: key)
+        case .inProgress:
+            // Under way, but the provider has no minute to state. Saying so beats inventing one,
+            // and beats silence.
+            pick(phrasebook.summaryInProgress(), key: key + "-stage")
+        case .interrupted:
+            pick(phrasebook.summaryInterrupted(), key: key + "-stage")
+        case .suspended:
+            pick(phrasebook.summarySuspended(), key: key + "-stage")
         case .postponed, .cancelled, .unknown:
             // Handled as an exception state by the caller, which can say more about it than a
             // recap of a match that is not being played.
@@ -498,7 +545,7 @@ nonisolated private extension TemplateNarrationEngine {
     /// Events that took place before the given one.
     ///
     /// Prefers position in the provider's list, which preserves ordering between events sharing a
-    /// minute, and falls back to comparing minutes when the event is not part of the list — the
+    /// minute, and falls back to comparing minutes when the event is not part of the list, the
     /// case when narrating an event held elsewhere, such as a bookmark.
     func events(upTo event: MatchEvent, in match: Match) -> [MatchEvent] {
         if let index = match.events.firstIndex(where: { $0.id == event.id }) {

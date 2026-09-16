@@ -115,6 +115,19 @@ struct SpeechQueueTests {
         #expect(queue.takeNext()?.id == "newest")
     }
 
+    @Test("A restarted sentence goes back to the front, not to the end of the line")
+    func prependPutsUtteranceFirst() {
+        // Used when the listener changes speed or voice mid-sentence: the sentence is cut off and
+        // spoken again at the new setting, so it has to resume before whatever was waiting.
+        var queue = SpeechQueue()
+        queue.enqueue(utterance("waiting", .normal))
+
+        queue.prepend(utterance("interrupted", .normal))
+
+        #expect(queue.takeNext()?.id == "interrupted")
+        #expect(queue.takeNext()?.id == "waiting")
+    }
+
     @Test("Interrupting does not discard what the listener asked for")
     func interruptingSparesRequests() {
         var queue = SpeechQueue()

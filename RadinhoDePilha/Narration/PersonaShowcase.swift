@@ -10,7 +10,7 @@ import Foundation
 /// over: the preview is exactly what the listener will get, and it cannot drift out of date when
 /// the phrasebook changes.
 ///
-/// The moment is spoken with its context first — which match, which competition, which year —
+/// The moment is spoken with its context first, which match, which competition, which year 
 /// because a goal announcement with no setting is disorienting when you cannot see a screen
 /// explaining that this is a sample.
 nonisolated struct PersonaShowcase: Sendable {
@@ -65,7 +65,7 @@ nonisolated extension PersonaShowcase {
     ///
     /// The derby: Náutico 1×0 Sport in the 2024 Pernambucano, decided by Patrick Allan at 58
     /// minutes. Chosen over a cup final because a Clássico dos Clássicos won at home is the moment
-    /// a Náutico supporter recognises fastest — and recognising the moment is what lets someone
+    /// a Náutico supporter recognises fastest, and recognising the moment is what lets someone
     /// judge a persona by how it *sounds* rather than by what it says.
     ///
     /// It is also the only Náutico win over Sport in the seasons the free plan reaches.

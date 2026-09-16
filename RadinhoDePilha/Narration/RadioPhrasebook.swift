@@ -38,8 +38,8 @@ nonisolated enum MatchPeriod: Sendable {
 /// that reading it is not. The engine picks among the alternatives deterministically, so variety
 /// does not cost reproducibility.
 ///
-/// Alternatives may only rephrase what the data states. None of them may add a fact — no "parou
-/// no goleiro" for a missed penalty, no "de fora da área" for a goal — because the provider does
+/// Alternatives may only rephrase what the data states. None of them may add a fact, no "parou
+/// no goleiro" for a missed penalty, no "de fora da área" for a goal, because the provider does
 /// not report it, and inventing detail would make the app narrate things that did not happen.
 ///
 /// The wording draws on the conventions of Brazilian radio football commentary as generally
@@ -459,6 +459,32 @@ nonisolated struct RadioPhrasebook: Sendable {
         [
             "A partida está encerrada.",
             "Jogo terminado."
+        ]
+    }
+
+    /// Under way, but the provider gives no minute.
+    func summaryInProgress() -> [String] {
+        [
+            "A bola está rolando.",
+            "Jogo em andamento."
+        ]
+    }
+
+    /// Halted by the referee, expected back shortly.
+    ///
+    /// Says that it should resume, because the listener's real question is whether to keep waiting.
+    func summaryInterrupted() -> [String] {
+        [
+            "O jogo está interrompido e deve voltar em instantes.",
+            "Partida parada no momento, com retorno previsto."
+        ]
+    }
+
+    /// Halted by the referee, possibly to be finished another day.
+    func summarySuspended() -> [String] {
+        [
+            "A partida foi suspensa pelo árbitro.",
+            "Jogo suspenso. Pode ser retomado em outra data."
         ]
     }
 

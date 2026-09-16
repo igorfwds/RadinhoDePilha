@@ -64,19 +64,33 @@ nonisolated enum APIFootballMapper {
 
     // MARK: - Status
 
+    /// Maps the vendor's status code onto the domain.
+    ///
+    /// Covers the vendor's documented table in full. Three of them used to fall through to
+    /// ``MatchStatus/unknown``, and one of those was a real defect: `LIVE` means the match *is*
+    /// being played but without a known minute, and an unknown status stops the polling loop, so
+    /// the app went quiet exactly while the match was on.
     static func status(from short: String) -> MatchStatus {
         switch short.uppercased() {
         case "TBD", "NS": .scheduled
         case "1H": .firstHalf
         case "HT": .halfTime
         case "2H": .secondHalf
-        case "ET", "BT": .extraTime
+        case "ET": .extraTime
+        case "BT": .breakTime
         case "P": .penaltyShootout
+        // Documented as rare: in play, but half-time and elapsed minute are unavailable.
+        case "LIVE": .inProgress
+        // Referee stopped play. `INT` is expected back in minutes; `SUSP` may be replayed another
+        // day. Both keep the match open, and both have to be said out loud, an unexplained
+        // silence is indistinguishable from a broken app.
+        case "INT": .interrupted
+        case "SUSP": .suspended
         case "FT", "AET", "PEN": .finished
+        case "ABD": .abandoned
+        case "AWD", "WO": .awarded
         case "PST": .postponed
-        case "CANC", "ABD", "AWD", "WO": .cancelled
-        // `LIVE` means "in progress, minute unknown", `SUSP` and `INT` mean temporarily halted.
-        // None map cleanly, and guessing would put a wrong period name into the narration.
+        case "CANC": .cancelled
         default: .unknown
         }
     }
@@ -148,7 +162,7 @@ nonisolated enum APIFootballMapper {
     ///
     /// The end of a period is placed after the stoppage time actually played, taken from the
     /// reported events. Anchoring it to minute 45 or 90 flat would put "fim do primeiro tempo"
-    /// before a goal scored at 45+2 — which, for a listener following by ear, reads as the
+    /// before a goal scored at 45+2, which, for a listener following by ear, reads as the
     /// referee blowing the whistle and the match continuing anyway.
     static func periodEvents(for match: Match, reported: [MatchEvent] = []) -> [MatchEvent] {
         var events: [MatchEvent] = []

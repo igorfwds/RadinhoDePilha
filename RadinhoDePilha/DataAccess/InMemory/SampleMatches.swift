@@ -2,8 +2,8 @@ import Foundation
 
 /// Hand-built match data for development, previews and tests.
 ///
-/// Player names are fictional. The point of this data is to exercise narration paths — an
-/// equaliser, a comeback, a sending off — not to reproduce a real line-up, and inventing a
+/// Player names are fictional. The point of this data is to exercise narration paths, an
+/// equaliser, a comeback, a sending off, not to reproduce a real line-up, and inventing a
 /// squad would put made-up facts about identifiable people into the project.
 ///
 /// Clubs and competition are real because the case study is Clube Náutico Capibaribe in the

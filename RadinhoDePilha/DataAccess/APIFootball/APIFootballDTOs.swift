@@ -3,7 +3,7 @@ import Foundation
 /// Wire format of API-Football v3 responses.
 ///
 /// These types exist only to decode what the vendor sends. They deliberately keep the vendor's
-/// own names and shapes — `assist`, `elapsed`, `short` — so that the awkwardness stays contained
+/// own names and shapes, `assist`, `elapsed`, `short`, so that the awkwardness stays contained
 /// here instead of leaking into the domain. Translation is ``APIFootballMapper``'s job.
 ///
 /// Nothing above ``MatchDataProvider`` should ever see one of these.
@@ -118,8 +118,8 @@ nonisolated struct APIFootballEvent: Decodable, Sendable {
     /// Qualifier within the type: `Normal Goal`, `Own Goal`, `Penalty`, `Missed Penalty`,
     /// `Yellow Card`, `Red Card`, `Substitution 1`, `Penalty awarded`…
     ///
-    /// The documented list is incomplete — `Penalty awarded` appears in real responses but not in
-    /// the docs — so mapping treats unrecognised details as a fallback rather than an error.
+    /// The documented list is incomplete, `Penalty awarded` appears in real responses but not in
+    /// the docs, so mapping treats unrecognised details as a fallback rather than an error.
     let detail: String
 }
 

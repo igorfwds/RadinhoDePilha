@@ -4,7 +4,7 @@ import SwiftUI
 ///
 /// Two principles shape it. Each option carries a spoken description rather than only a label, so
 /// a listener knows what a persona or a voice tier means before selecting it. And each choice can
-/// be **previewed aloud** — a sample sentence spoken in the persona, voice and rate just picked —
+/// be **previewed aloud**, a sample sentence spoken in the persona, voice and rate just picked 
 /// because reading "Aprimorada" tells you nothing about whether you want to hear it for ninety
 /// minutes.
 struct SettingsView: View {
@@ -13,6 +13,13 @@ struct SettingsView: View {
     /// Speaks the previews. The same service the match narration uses, so a preview sounds exactly
     /// like the real thing rather than approximating it.
     let speech: any SpeechService
+
+    /// Whether a match is being narrated right now.
+    ///
+    /// Suppresses the spoken previews while it is. Someone adjusting the voice during a match is
+    /// adjusting it *because* they are listening: the change already proves itself on the next
+    /// sentence, and an example talking over the commentary would be the opposite of helpful.
+    let isNarratingLive: Bool
 
     @State private var voices: [InstalledVoice] = []
 
@@ -60,17 +67,22 @@ struct SettingsView: View {
                             subtitle: persona.summary,
                             isSelected: settings.persona == persona
                         )
+                        // Takes the space left over, so every play button lands on the trailing
+                        // edge instead of tracking the width of the text beside it.
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(persona.displayName)
                     .accessibilityValue(settings.persona == persona ? "Selecionado" : "")
                     .accessibilityHint("Toque duas vezes para narrar com esta voz")
 
-                    // Separate control, so hearing a persona does not mean adopting it. Someone
-                    // comparing three options should be able to listen to all of them before
-                    // committing to one.
+                    // Separate from selecting, so hearing a persona does not mean adopting it:
+                    // someone comparing three should be able to listen to all of them first.
+                    //
+                    // Plays even during a match, unlike the automatic previews. This button exists
+                    // for no other purpose than to be heard, so suppressing it would break it.
                     Button {
-                        Task { await preview(persona: persona) }
+                        Task { await speech.speakNow(excerpt(for: persona), priority: .high) }
                     } label: {
                         Image(systemName: "play.circle.fill")
                             .font(.title)
@@ -231,21 +243,25 @@ struct SettingsView: View {
         showcase?.narration(persona: persona) ?? persona.sample
     }
 
-    private func preview(persona: NarratorPersona) async {
-        await speech.speakNow(excerpt(for: persona), priority: .high)
-    }
-
+    /// Applies the voice, and demonstrates it only when nothing else is being said.
+    ///
+    /// The application is unconditional: it has to reach the live narration immediately, which is
+    /// the whole point of changing it mid-match.
     private func preview(voice: InstalledVoice) async {
         await speech.setVoice(identifier: voice.id)
+
+        guard !isNarratingLive else { return }
         await speech.speakNow(excerpt(for: settings.persona), priority: .high)
     }
 
     private func previewRate() async {
         await speech.setRate(settings.rate)
+
+        guard !isNarratingLive else { return }
         await speech.speakNow(excerpt(for: settings.persona), priority: .high)
     }
 }
 
 #Preview("Ajustes") {
-    SettingsView(settings: AppSettings(), speech: AVSpeechService())
+    SettingsView(settings: AppSettings(), speech: AVSpeechService(), isNarratingLive: false)
 }

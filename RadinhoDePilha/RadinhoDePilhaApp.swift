@@ -8,8 +8,8 @@ struct RadinhoDePilhaApp: App {
     /// different vendor, is a change here and nowhere else. The screens, the narration engine and
     /// their tests never learn which provider won.
     ///
-    /// Today it replays Náutico 4×3 Tombense — a real Série B match, decoded from a recorded
-    /// API-Football response — as if it were happening now. Live data waits on a paid plan: the
+    /// Today it replays Náutico 4×3 Tombense, a real Série B match, decoded from a recorded
+    /// API-Football response, as if it were happening now. Live data waits on a paid plan: the
     /// free tier only reaches seasons 2022 to 2024, so the current season cannot be requested at
     /// all, and its hundred daily requests would not survive one polled match regardless.
     private let provider: MatchDataProvider
@@ -45,7 +45,6 @@ struct RadinhoDePilhaApp: App {
                     provider: provider,
                     engine: TemplateNarrationEngine(persona: settings.persona),
                     speech: speech,
-                    rate: settings.rate,
                     pollInterval: pollInterval
                 ),
                 speech: speech,

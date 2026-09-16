@@ -10,7 +10,7 @@ private final class FixtureLocator {}
 
 /// Tests the vendor adapter against responses actually returned by API-Football.
 ///
-/// The payloads in `Fixtures/` were captured from the live API for Náutico in Série B 2022 — the
+/// The payloads in `Fixtures/` were captured from the live API for Náutico in Série B 2022, the
 /// most recent season the free plan exposes. Testing against recorded responses rather than
 /// hand-written JSON is the point: every defect these tests guard against was present in the real
 /// data and absent from the documentation.
@@ -124,6 +124,25 @@ struct APIFootballMapperTests {
         #expect(match.homeTeam.nickname == "Timbu")
     }
 
+    @Test("A match in play keeps polling even when the minute is unknown")
+    func inProgressStaysLive() {
+        // The defect: `LIVE` means in play without a known minute, and treating it as unknown made
+        // `isLive` false, which stopped the loop mid-match.
+        #expect(APIFootballMapper.status(from: "LIVE").isLive)
+        #expect(APIFootballMapper.status(from: "INT").isLive)
+        #expect(APIFootballMapper.status(from: "SUSP").isLive)
+        // Play is not actually happening in the halted ones, though.
+        #expect(!APIFootballMapper.status(from: "INT").isBallInPlay)
+        #expect(APIFootballMapper.status(from: "LIVE").isBallInPlay)
+    }
+
+    @Test("Matches decided or ended off the pitch stop the loop")
+    func endedStatesStopPolling() {
+        #expect(!APIFootballMapper.status(from: "ABD").isLive)
+        #expect(!APIFootballMapper.status(from: "WO").isLive)
+        #expect(!APIFootballMapper.status(from: "AWD").isLive)
+    }
+
     @Test("An unknown club still gets a usable name")
     func unknownClubFallsBack() {
         let team = ClubDirectory.team(id: 999_999, vendorName: "Clube Desconhecido")
@@ -184,7 +203,16 @@ struct APIFootballMapperTests {
             ("PEN", .finished),
             ("PST", .postponed),
             ("CANC", .cancelled),
-            ("SUSP", .unknown)
+            ("BT", .breakTime),
+            ("P", .penaltyShootout),
+            // Used to fall through to `unknown`, which stops the polling loop, on a match that is
+            // being played. The worst possible moment to go quiet.
+            ("LIVE", .inProgress),
+            ("INT", .interrupted),
+            ("SUSP", .suspended),
+            ("ABD", .abandoned),
+            ("WO", .awarded),
+            ("XX", .unknown)
         ]
     )
     func statusMaps(code: String, expected: MatchStatus) {
@@ -224,7 +252,7 @@ struct APIFootballMapperTests {
     func substitutionPlayersAreSwapped() throws {
         // The defect this guards against would reverse every substitution the app announces.
         // In the recorded match, Keké is booked at 58' and substituted in the same minute, so
-        // Keké is unambiguously the player leaving the pitch — and the vendor puts him in
+        // Keké is unambiguously the player leaving the pitch, and the vendor puts him in
         // `player`, which the domain reserves for whoever comes on.
         let match = APIFootballMapper.match(from: try showcaseFixture(), events: try events())
 
