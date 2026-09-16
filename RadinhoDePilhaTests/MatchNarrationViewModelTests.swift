@@ -188,16 +188,21 @@ struct MatchNarrationViewModelTests {
 
     // MARK: - Narration
 
-    @Test("Pressing play does not recite what already happened")
-    func startingDoesNotReciteBacklog() async {
-        // The defect this guards against was heard before it was found: the backlog was queued
-        // by priority, so the app announced the closing score and then an earlier one.
+    @Test("Pressing play speaks only the latest moment, not the whole match")
+    func startingSpeaksOnlyTheLatestMoment() async throws {
+        // Two defects meet here. Reciting the backlog was the first, the app announced the
+        // closing score and then an earlier one. Saying nothing at all was the second: pausing
+        // and resuming with no new event left the narrator mute, which reads as broken.
         let (viewModel, spy) = makeViewModel()
         await viewModel.load(matchID: SampleMatches.liveComeback.id)
 
         await viewModel.startNarrating()
 
-        #expect(await spy.spoken.isEmpty)
+        let spoken = await spy.spoken
+        let last = try #require(viewModel.narrations.last)
+
+        #expect(spoken.count == 1)
+        #expect(spoken.first?.id == last.id)
     }
 
     @Test("Pressing play says out loud that narration is live")
@@ -227,9 +232,11 @@ struct MatchNarrationViewModelTests {
         await waitUntil { await spy.spoken.count >= 2 }
         await viewModel.stopNarrating()
 
-        let minutes = await spy.spoken.map(\.minute)
-        #expect(minutes == minutes.sorted())
-        #expect(minutes.first == 61)
+        // The first utterance is the catch-up moment from pressing play; the rest is the live
+        // feed, and that is what must be in order.
+        let live = await spy.spoken.dropFirst().map(\.minute)
+        #expect(live == live.sorted())
+        #expect(live.first == 61)
     }
 
     @Test("Events arriving while live are narrated as they arrive")
@@ -241,13 +248,14 @@ struct MatchNarrationViewModelTests {
         await viewModel.load(matchID: SampleMatches.liveComeback.id)
         await viewModel.startNarrating()
 
-        await waitUntil { await spy.spoken.count >= 2 }
+        await waitUntil { await spy.spoken.count >= 3 }
         await viewModel.stopNarrating()
 
-        let minutes = await spy.spoken.map(\.minute)
-        // One state adds the substitution at 61, the next the penalty at 66. Arriving in
-        // separate cycles, they are heard in the order they happened.
-        #expect(minutes == [61, 66])
+        // Dropping the catch-up moment spoken by play itself: one state adds the substitution at
+        // 61, the next the penalty at 66, and arriving in separate cycles they are heard in the
+        // order they happened.
+        let live = await spy.spoken.dropFirst().map(\.minute)
+        #expect(Array(live) == [61, 66])
     }
 
     @Test("A match that is over is announced instead of narrated")
@@ -265,7 +273,7 @@ struct MatchNarrationViewModelTests {
     @Test("Answering a tap interrupts the queue instead of waiting for it to drain")
     func tapAnswersInterrupt() async {
         // Reported from use: with commentary still queued, pressing play on a finished match
-        // only said "esta partida já terminou" once the queue ran out — long enough after the
+        // only said "esta partida já terminou" once the queue ran out, long enough after the
         // tap that the two no longer seemed related.
         let (viewModel, spy) = makeViewModel()
         await viewModel.load(matchID: SampleMatches.finishedWithRedCard.id)
@@ -294,14 +302,17 @@ struct MatchNarrationViewModelTests {
         await viewModel.load(matchID: SampleMatches.liveComeback.id)
 
         await viewModel.startNarrating()
-        #expect(await spy.spoken.isEmpty)
+        let afterPlay = await spy.spoken.count
 
         await viewModel.speakSummary()
 
         let spoken = await spy.spoken
-        #expect(spoken.count == 1)
+        // Play spoke the latest moment; the summary is the extra one, and only because it was
+        // asked for.
+        #expect(spoken.count == afterPlay + 1)
         // States the score, which is the question someone tuning in is asking.
-        #expect(spoken.first?.text.contains("Náutico 2") == true)
+        #expect(spoken.last?.text.contains("Náutico 2") == true)
+        #expect(await spy.interrupting.count == 1)
     }
 
     @Test("Narrating twice does not repeat what was already spoken")
@@ -390,28 +401,4 @@ struct MatchNarrationViewModelTests {
         #expect(viewModel.wasSpoken(target))
     }
 
-    // MARK: - Rate
-
-    @Test("Changing the rate forwards it to the speech service")
-    func changingRateForwardsIt() async {
-        let (viewModel, spy) = makeViewModel()
-
-        viewModel.rate = .fast
-        // The change is forwarded from a detached task, so yield until it lands.
-        await Task.yield()
-        try? await Task.sleep(for: .milliseconds(50))
-
-        #expect(await spy.appliedRates.contains(.fast))
-    }
-
-    @Test("Setting the same rate again does not re-apply it")
-    func settingSameRateIsIgnored() async {
-        let (viewModel, spy) = makeViewModel()
-
-        viewModel.rate = .normal
-        await Task.yield()
-        try? await Task.sleep(for: .milliseconds(50))
-
-        #expect(await spy.appliedRates.isEmpty)
-    }
 }

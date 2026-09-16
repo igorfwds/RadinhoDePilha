@@ -372,4 +372,55 @@ struct TemplateNarrationEngineTests {
 
         #expect(shapes.count > 1)
     }
+
+    // MARK: - Time markers
+
+    @Test("The clock is stated once for events sharing the same minute")
+    func repeatedTimeMarkerIsSuppressed() throws {
+        // Real commentary states the minute once and keeps talking. Repeating it before each of
+        // four events from minute 58 sounds like a table being read aloud.
+        let nautico = SampleMatches.nautico
+        let crb = SampleMatches.crb
+
+        func event(_ kind: MatchEventKind, minute: Int, player: String) -> MatchEvent {
+            MatchEvent(
+                kind: kind,
+                minute: minute,
+                stoppageMinute: nil,
+                team: nautico,
+                player: player,
+                relatedPlayer: nil,
+                detail: nil
+            )
+        }
+
+        let match = Match(
+            id: "m",
+            competition: .brasileiraoSerieB,
+            season: 2026,
+            homeTeam: nautico,
+            awayTeam: crb,
+            kickoff: Date(timeIntervalSince1970: 0),
+            status: .secondHalf,
+            elapsedMinutes: 60,
+            score: .goalless,
+            events: [
+                event(.yellowCard, minute: 58, player: "Um"),
+                event(.yellowCard, minute: 58, player: "Dois"),
+                event(.yellowCard, minute: 59, player: "Tres")
+            ]
+        )
+
+        let engine = TemplateNarrationEngine()
+        let texts = match.events.compactMap { engine.narrate($0, in: match)?.text }
+
+        #expect(texts.count == 3)
+        // First of the minute keeps the reference.
+        #expect(texts[0].contains("58"))
+        // Second shares the instant, so it drops it and starts with the event itself.
+        #expect(!texts[1].contains("58"))
+        #expect(!texts[1].hasPrefix(" "))
+        // The clock moved, so the reference comes back.
+        #expect(texts[2].contains("59"))
+    }
 }

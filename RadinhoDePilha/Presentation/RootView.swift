@@ -9,13 +9,26 @@ import SwiftUI
 ///
 /// Narração comes first and is the default, since it is the reason the app exists. Settings sit
 /// last, where the platform trains people to look for them.
+///
+/// This view also owns **which match is being followed**, because that can change from elsewhere:
+/// the live lookup on the testing screen replaces it and brings the narration tab forward.
 struct RootView: View {
     @State private var settings: AppSettings
     @State private var viewModel: MatchNarrationViewModel
 
+    /// Match currently on the narration screen.
+    @State private var followedMatchID: String
+
+    @State private var selectedTab = Tab.narration
+
     private let speech: any SpeechService
-    private let matchID: String
     private let recordedMatch: Match?
+
+    private enum Tab: Hashable {
+        case narration
+        case modes
+        case settings
+    }
 
     init(
         settings: AppSettings,
@@ -27,22 +40,39 @@ struct RootView: View {
         self.settings = settings
         self.viewModel = viewModel
         self.speech = speech
-        self.matchID = matchID
+        self.followedMatchID = matchID
         self.recordedMatch = recordedMatch
     }
 
     var body: some View {
-        TabView {
-            Tab("Narração", systemImage: "dot.radiowaves.left.and.right") {
-                MatchNarrationView(viewModel: viewModel, matchID: matchID)
+        TabView(selection: $selectedTab) {
+            SwiftUI.Tab(
+                "Narração",
+                systemImage: "dot.radiowaves.left.and.right",
+                value: Tab.narration
+            ) {
+                MatchNarrationView(
+                    viewModel: viewModel,
+                    settings: settings,
+                    matchID: followedMatchID
+                )
             }
 
-            Tab("Modos", systemImage: "slider.horizontal.3") {
-                TestModesView(recordedMatch: recordedMatch, settings: settings, speech: speech)
+            SwiftUI.Tab("Modos", systemImage: "slider.horizontal.3", value: Tab.modes) {
+                TestModesView(
+                    recordedMatch: recordedMatch,
+                    settings: settings,
+                    speech: speech,
+                    onFollowLiveMatch: follow(liveMatch:)
+                )
             }
 
-            Tab("Ajustes", systemImage: "gearshape") {
-                SettingsView(settings: settings, speech: speech)
+            SwiftUI.Tab("Ajustes", systemImage: "gearshape", value: Tab.settings) {
+                SettingsView(
+                    settings: settings,
+                    speech: speech,
+                    isNarratingLive: viewModel.isNarrating
+                )
             }
         }
         // Applied at the root so every screen honours the choice, including the ones that only
@@ -64,6 +94,16 @@ struct RootView: View {
         .onChange(of: settings.voiceIdentifier) {
             Task { await speech.setVoice(identifier: settings.voiceIdentifier) }
         }
+    }
+
+    /// Switches the narration screen to a live match and brings it forward.
+    ///
+    /// Moving to the tab is part of the answer, not decoration: the listener asked to hear a match,
+    /// and starting audio while leaving them on another screen would be disorienting for someone
+    /// navigating by screen reader.
+    private func follow(liveMatch match: Match) {
+        followedMatchID = match.id
+        selectedTab = .narration
     }
 
     /// Pushes stored preferences into the services on launch.

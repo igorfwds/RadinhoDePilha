@@ -15,7 +15,12 @@ struct TestModesView: View {
     @Bindable var settings: AppSettings
     let speech: any SpeechService
 
+    /// Hands a live match to the narration screen and brings that screen forward.
+    let onFollowLiveMatch: (Match) -> Void
+
     @State private var dump = MatchDumpModel()
+    @State private var finder: LiveMatchFinder?
+    @State private var showsIdleAlert = false
 
     var body: some View {
         NavigationStack {
@@ -25,6 +30,11 @@ struct TestModesView: View {
                 liveSection
             }
             .navigationTitle("Modos de teste")
+            .alert("Nenhuma partida agora", isPresented: $showsIdleAlert) {
+                Button("Entendi", role: .cancel) {}
+            } message: {
+                Text(idleAlertMessage)
+            }
         }
     }
 
@@ -96,22 +106,97 @@ struct TestModesView: View {
     private var liveSection: some View {
         Section {
             Button {
-                // Intentionally empty: enabled only once a paid plan exists.
+                Task { await searchForLiveMatch() }
             } label: {
-                Label("Reproduzir partida ao vivo", systemImage: "antenna.radiowaves.left.and.right")
+                HStack {
+                    Label(
+                        "Reproduzir partida ao vivo",
+                        systemImage: "antenna.radiowaves.left.and.right"
+                    )
+
+                    if finder?.isSearching == true {
+                        Spacer()
+                        ProgressView()
+                    }
+                }
             }
-            .disabled(true)
+            .disabled(!LiveMatchFinder.isAvailable || finder?.isSearching == true)
+            .accessibilityHint(
+                LiveMatchFinder.isAvailable
+                    ? "Procura uma partida do Náutico em andamento e começa a narrar"
+                    : "Indisponível: falta a credencial da API"
+            )
+
+            if case .failed(let message) = finder?.outcome {
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         } header: {
             Text("Ao vivo de verdade")
         } footer: {
-            Text(
-                """
-                Indisponível no plano gratuito, que só alcança as temporadas de 2022 a 2024 e \
-                permite 100 consultas por dia — menos do que uma única partida consome \
-                consultando uma vez por minuto, como o fornecedor recomenda.
-                """
-            )
+            // The reason changes with the credential, and stating the real one beats a generic
+            // "unavailable" that leaves the listener guessing what to fix.
+            if LiveMatchFinder.isAvailable {
+                Text(
+                    """
+                    Procura uma partida do Náutico pela Série B acontecendo agora. Se houver, a \
+                    narração começa na aba Narração. Se não houver, o app diz quando é o próximo \
+                    jogo.
+                    """
+                )
+            } else {
+                Text(
+                    """
+                    Indisponível sem a credencial da API. O plano gratuito também não serve: \
+                    alcança apenas as temporadas de 2022 a 2024 e permite 100 consultas por dia, \
+                    menos do que uma única partida consome consultando uma vez por minuto, como o \
+                    fornecedor recomenda.
+                    """
+                )
+            }
         }
+    }
+
+    // MARK: - Live lookup
+
+    private func searchForLiveMatch() async {
+        let finder = liveFinder()
+        await finder.search()
+
+        switch finder.outcome {
+        case .live(let match):
+            onFollowLiveMatch(match)
+        case .idle:
+            // Both shown and spoken: the alert serves whoever is looking, and the speech, already
+            // delivered by the finder, serves whoever is not.
+            showsIdleAlert = true
+        case .failed, .none:
+            break
+        }
+    }
+
+    /// Builds the finder on first use, against the live provider.
+    private func liveFinder() -> LiveMatchFinder {
+        if let finder { return finder }
+
+        let provider: MatchDataProvider =
+            if let key = AppConfiguration.apiFootballKey {
+                APIFootballProvider(apiKey: key)
+            } else {
+                FixtureMatchDataProvider(matches: [])
+            }
+
+        let created = LiveMatchFinder(provider: provider, speech: speech)
+        finder = created
+
+        return created
+    }
+
+    private var idleAlertMessage: String {
+        guard case .idle(let next) = finder?.outcome else { return "" }
+
+        return finder?.idleMessage(next: next) ?? ""
     }
 }
 
@@ -158,7 +243,7 @@ final class MatchDumpModel {
         let engine = TemplateNarrationEngine()
 
         // Derived from a fixed origin rather than the wall clock, so the same match always yields
-        // the same dump — a diagnostic that changed between runs would be useless for comparison.
+        // the same dump, a diagnostic that changed between runs would be useless for comparison.
         for minute in stride(from: 0, through: 95, by: step) {
             let state = simulator.state(
                 at: Date(timeIntervalSince1970: TimeInterval(minute))
@@ -167,7 +252,7 @@ final class MatchDumpModel {
 
             snapshots.append(
                 Snapshot(
-                    title: "\(minute)' — \(state.homeTeam.shortName) \(state.score.home) × \(state.score.away) \(state.awayTeam.shortName)",
+                    title: "\(minute)', \(state.homeTeam.shortName) \(state.score.home) × \(state.score.away) \(state.awayTeam.shortName)",
                     body: """
                     \(state.status.spokenDescription) · \(state.events.count) lances conhecidos
                     \(latest?.text ?? "sem lances ainda")

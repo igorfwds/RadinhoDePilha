@@ -3,7 +3,7 @@ import Foundation
 
 /// Speaks narration through the platform synthesiser.
 ///
-/// An `actor` because it owns mutable state — the queue and what is currently being spoken — that
+/// An `actor` because it owns mutable state, the queue and what is currently being spoken, that
 /// is touched from the polling loop, from the interface, and from the synthesiser's own callbacks.
 /// Serialising that state is exactly what an actor is for, and it is the mechanism described in
 /// Section 3.7.4 of the theoretical background.
@@ -26,6 +26,19 @@ actor AVSpeechService: SpeechService {
     private var box: SpeechSynthesizerBox?
 
     private var queue = SpeechQueue()
+
+    /// What is being spoken right now, so a settings change can restart it.
+    ///
+    /// Stays set until the sentence genuinely finishes. Clearing it while the restart is in flight
+    /// opened a window where a second change found nothing to restart.
+    private var speaking: PendingUtterance?
+
+    /// Whether the sentence in progress was cut off to be spoken again at a new setting.
+    ///
+    /// Distinguishes "stopped because the listener changed something" from "finished speaking",
+    /// which look identical from the synthesiser's callback.
+    private var restartRequested = false
+
     private var currentPriority: NarrationPriority?
     private var isPumping = false
     private var rate: SpeechRate
@@ -113,17 +126,48 @@ actor AVSpeechService: SpeechService {
     func stopAll() async {
         queue.removeAll()
         currentPriority = nil
+        speaking = nil
+        restartRequested = false
         await synthesizer().stop()
     }
 
     func setVoice(identifier: String?) async {
+        guard identifier != voiceIdentifier else { return }
+
         voiceIdentifier = identifier
+        await restartCurrentUtterance()
     }
 
     func setRate(_ rate: SpeechRate) async {
+        guard rate != self.rate else { return }
+
         self.rate = rate
-        // Applies from the next utterance onwards. Changing the rate mid-sentence would mean
-        // cutting the sentence off and starting it again, which is worse than finishing it.
+        await restartCurrentUtterance()
+    }
+
+    /// Restarts the sentence in progress so a settings change is heard immediately.
+    ///
+    /// `AVSpeechUtterance` fixes its rate and voice when it is created, so there is no way to alter
+    /// speech already under way. Restarting the sentence is what makes the control feel connected
+    /// to the sound: waiting for the next event would leave the listener wondering whether the
+    /// change registered, and during a quiet stretch of a match that wait can be minutes.
+    ///
+    /// The sentence goes back to the front of the queue rather than being dropped, so nothing is
+    /// lost, it is simply heard again at the new setting.
+    private func restartCurrentUtterance() async {
+        guard let speaking else { return }
+
+        // Already queued for a restart. The pump has not resumed yet, and when it does it will use
+        // whatever the settings say at that moment, so a second change needs no second requeue,
+        // and adding one would speak the sentence twice.
+        guard !restartRequested else { return }
+
+        restartRequested = true
+        queue.prepend(speaking)
+        currentPriority = nil
+
+        await synthesizer().stop()
+        startPumpIfNeeded()
     }
 
     /// Prepares the audio session. Call once, before the first utterance.
@@ -159,12 +203,24 @@ actor AVSpeechService: SpeechService {
     private func pump() async {
         while let next = queue.takeNext() {
             currentPriority = next.priority
+            speaking = next
+
             await synthesizer().speak(
                 next.text,
                 rateMultiplier: rate.multiplier,
                 voiceIdentifier: voiceIdentifier
             )
+
             currentPriority = nil
+
+            if restartRequested {
+                // Cut off on purpose: the sentence is already back at the front of the queue and
+                // `speaking` stays set, so the next change to arrive can cut it off again. This is
+                // what makes the setting respond to every touch rather than only the first.
+                restartRequested = false
+            } else {
+                speaking = nil
+            }
         }
 
         isPumping = false
@@ -183,6 +239,22 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
     private let languageCode: String
     private var continuation: CheckedContinuation<Void, Never>?
     private var didActivateSession = false
+
+    /// The utterance currently awaited, identified so that late callbacks can be told apart.
+    ///
+    /// Without this, restarting a sentence broke after the first time. Stopping a sentence schedules
+    /// its `didCancel`, which arrives *after* the replacement sentence has already started, and,
+    /// having no way to know which sentence it referred to, it resumed the new one's continuation
+    /// and made the app believe that sentence had finished. The result was that only the first
+    /// change of speed took effect; the second appeared to skip ahead.
+    private var awaitedUtterance: AVSpeechUtterance?
+
+    /// Guards against a sentence that is handed to the synthesiser and never starts.
+    ///
+    /// The synthesiser can drop a `speak` silently, no error, no callback, and the pump would then
+    /// wait forever on a continuation nobody resumes, killing narration for the rest of the match.
+    /// Cancelled as soon as speech actually begins, so a long sentence is never cut short.
+    private var startWatchdog: Task<Void, Never>?
 
     init(languageCode: String) {
         self.languageCode = languageCode
@@ -211,6 +283,11 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
     }
 
     func speak(_ text: String, rateMultiplier: Float, voiceIdentifier: String? = nil) async {
+        // Defence in depth. `stop` already waits for the synthesiser to settle, but a `speak`
+        // handed over while it is still winding down is discarded silently, and the cost of that
+        // is the voice dying for the rest of the match. Checking here means no caller can cause it.
+        await waitUntilIdle()
+
         await withCheckedContinuation { continuation in
             // A pending continuation means a previous utterance never reported completion.
             // Resuming it here keeps the queue moving instead of deadlocking the pump.
@@ -222,30 +299,116 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
             utterance.rate = Self.clampedRate(multiplier: rateMultiplier)
             utterance.postUtteranceDelay = 0.15
 
+            awaitedUtterance = utterance
             synthesizer.speak(utterance)
+            startWatchdog(for: utterance)
         }
     }
 
-    func stop() {
+    /// Releases the waiting caller if speech never begins.
+    private func startWatchdog(for utterance: AVSpeechUtterance) {
+        startWatchdog?.cancel()
+
+        startWatchdog = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .milliseconds(1500))
+
+            guard !Task.isCancelled,
+                  let self,
+                  let awaited = self.awaitedUtterance,
+                  ObjectIdentifier(awaited) == ObjectIdentifier(utterance),
+                  !self.synthesizer.isSpeaking
+            else { return }
+
+            // Handed over, never started, still nothing playing: treat it as lost and let the queue
+            // move on rather than stalling on it.
+            self.awaitedUtterance = nil
+            self.resumePending()
+        }
+    }
+
+    /// Stops what is being spoken and waits until the synthesiser is genuinely idle.
+    ///
+    /// The wait is the important part. `AVSpeechSynthesizer` ignores `speak` while it is still
+    /// winding down from `stopSpeaking`, and does so **silently**, no error, no callback. The next
+    /// sentence then never starts and never reports completion, so the pump waits on a continuation
+    /// that will never be resumed and narration dies for good. That is what happened when the speed
+    /// was changed several times in quick succession.
+    ///
+    /// Bounded rather than open-ended: if the synthesiser never settles, giving up and carrying on
+    /// is better than hanging.
+    func stop() async {
+        // Disowned before stopping, so the `didCancel` this triggers is recognised as belonging to
+        // a sentence nobody is waiting on any more.
+        awaitedUtterance = nil
+
         synthesizer.stopSpeaking(at: .immediate)
-        // `didCancel` is expected to fire, but resuming defensively avoids a stall if it does not.
+
+        // Waits *before* releasing the caller, and the order is the whole point. Releasing first
+        // let the pump call `speak` while the synthesiser was still winding down, and a `speak`
+        // issued in that window is discarded without a word. That is what killed the voice after
+        // several changes in a row.
+        await waitUntilIdle()
+
+        // `didCancel` is expected to have fired by now, but resuming defensively avoids a stall if
+        // it did not.
         resumePending()
+    }
+
+    /// Roughly 200 ms of grace for the synthesiser to stop, in 10 ms steps.
+    private static let settleAttempts = 20
+
+    /// Waits for the synthesiser to stop reporting speech, up to a bounded number of attempts.
+    ///
+    /// Bounded rather than open ended: if it never settles, carrying on is better than hanging.
+    private func waitUntilIdle() async {
+        var attempts = 0
+
+        while synthesizer.isSpeaking, attempts < Self.settleAttempts {
+            try? await Task.sleep(for: .milliseconds(10))
+            attempts += 1
+        }
     }
 
     // MARK: - AVSpeechSynthesizerDelegate
 
     nonisolated func speechSynthesizer(
         _ synthesizer: AVSpeechSynthesizer,
+        didStart utterance: AVSpeechUtterance
+    ) {
+        // Speech is genuinely under way, so the watchdog has nothing left to guard.
+        Task { @MainActor [weak self] in self?.startWatchdog?.cancel() }
+    }
+
+    nonisolated func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
         didFinish utterance: AVSpeechUtterance
     ) {
-        Task { @MainActor [weak self] in self?.resumePending() }
+        // Only the identity crosses over: `AVSpeechUtterance` is not `Sendable`, and the object
+        // itself must not leave the thread the callback arrived on.
+        let identity = ObjectIdentifier(utterance)
+        Task { @MainActor [weak self] in self?.finished(identity) }
     }
 
     nonisolated func speechSynthesizer(
         _ synthesizer: AVSpeechSynthesizer,
         didCancel utterance: AVSpeechUtterance
     ) {
-        Task { @MainActor [weak self] in self?.resumePending() }
+        let identity = ObjectIdentifier(utterance)
+        Task { @MainActor [weak self] in self?.finished(identity) }
+    }
+
+    /// Resumes the waiting caller, but only for the sentence it is actually waiting on.
+    ///
+    /// Callbacks hop onto this actor, so they can arrive after the next sentence has started.
+    /// Comparing identity is what keeps a stale one from cutting the new sentence short.
+    private func finished(_ identity: ObjectIdentifier) {
+        guard let awaitedUtterance,
+              identity == ObjectIdentifier(awaitedUtterance)
+        else { return }
+
+        self.awaitedUtterance = nil
+        startWatchdog?.cancel()
+        resumePending()
     }
 
     // MARK: - Helpers
@@ -262,7 +425,7 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
     /// Resolves the voice to use: the chosen one when still installed, otherwise the best
     /// available.
     ///
-    /// Falling back matters because a chosen voice can disappear — the listener may delete the
+    /// Falling back matters because a chosen voice can disappear, the listener may delete the
     /// download in system settings, and a stored identifier would then resolve to nothing and
     /// leave the app silent.
     private static func voice(identifier: String?, language: String) -> AVSpeechSynthesisVoice? {
@@ -286,7 +449,7 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
     /// Applies the multiplier to the platform default and keeps the result within valid bounds.
     ///
     /// The bounds are global constants rather than members of `AVSpeechUtterance`, and the property
-    /// pins out-of-range values silently — clamping here makes the ceiling explicit instead of
+    /// pins out-of-range values silently, clamping here makes the ceiling explicit instead of
     /// letting a "very fast" setting quietly behave like "fast".
     private static func clampedRate(multiplier: Float) -> Float {
         let desired = AVSpeechUtteranceDefaultSpeechRate * multiplier

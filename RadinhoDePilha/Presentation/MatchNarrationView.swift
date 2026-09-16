@@ -6,21 +6,37 @@ import SwiftUI
 /// text is large by default and scales with Dynamic Type, colour never carries meaning on its own,
 /// and every control states out loud what it does and what will happen.
 ///
+/// ## Live narration outlives this screen
+///
+/// The polling loop is deliberately **not** stopped when this view goes away. A tab bar dismisses
+/// the previous tab, so suspending here meant that visiting Ajustes silenced the match, which is
+/// exactly backwards: someone adjusting the voice mid-match is adjusting it *because* they are
+/// listening. Narration stops when the listener stops it, and not before.
+///
 /// ## Glass and low vision
 ///
-/// The surfaces use the platform's Liquid Glass material, which is translucent by nature — and
+/// The surfaces use the platform's Liquid Glass material, which is translucent by nature, and
 /// translucency lowers contrast, which is the opposite of what this audience needs. The two are
 /// reconciled by ``AdaptiveGlass``: glass when the system allows it, an opaque bordered surface
 /// when the listener has asked to reduce transparency or raise contrast. Legibility wins whenever
 /// the two are in conflict.
 struct MatchNarrationView: View {
     @State private var viewModel: MatchNarrationViewModel
+
+    /// Shared preferences, so the speed control here and the one in Ajustes are the same setting.
+    ///
+    /// They used to be two: this screen held its own rate and the settings screen held another,
+    /// each pushing to the speech service. Whichever was touched last won, and the two pickers
+    /// disagreed on screen.
+    @Bindable var settings: AppSettings
+
     private let matchID: String
 
     @Namespace private var glassNamespace
 
-    init(viewModel: MatchNarrationViewModel, matchID: String) {
+    init(viewModel: MatchNarrationViewModel, settings: AppSettings, matchID: String) {
         self.viewModel = viewModel
+        self.settings = settings
         self.matchID = matchID
     }
 
@@ -29,8 +45,9 @@ struct MatchNarrationView: View {
             content
                 .navigationTitle("Radinho de Pilha")
                 .background { backdrop }
-                .task { await viewModel.load(matchID: matchID) }
-                .onDisappear { viewModel.suspend() }
+                // Keyed on the identifier so that switching matches, which the live lookup does
+                // from another tab, reloads instead of leaving the previous match on screen.
+                .task(id: matchID) { await viewModel.load(matchID: matchID) }
         }
     }
 
@@ -275,7 +292,7 @@ struct MatchNarrationView: View {
                 }
             }
 
-            Picker("Velocidade da narração", selection: $viewModel.rate) {
+            Picker("Velocidade da narração", selection: $settings.rate) {
                 ForEach(SpeechRate.allCases, id: \.self) { rate in
                     Text(rate.displayName).tag(rate)
                 }
@@ -307,7 +324,7 @@ struct MatchNarrationView: View {
         .buttonStyle(.glassProminent)
         .glassEffectID("play", in: glassNamespace)
         // States the outcome, and states that live narration does not recount what already
-        // happened — otherwise a listener joining at half-time would expect a recap and get
+        // happened, otherwise a listener joining at half-time would expect a recap and get
         // silence until the next event.
         .accessibilityHint(
             viewModel.isNarrating
@@ -376,8 +393,14 @@ extension MatchStatus {
         case .halfTime: "Intervalo"
         case .secondHalf: "Segundo tempo"
         case .extraTime: "Prorrogação"
+        case .breakTime: "Intervalo da prorrogação"
         case .penaltyShootout: "Disputa de pênaltis"
+        case .inProgress: "Em andamento"
+        case .interrupted: "Jogo interrompido"
+        case .suspended: "Jogo suspenso"
         case .finished: "Encerrada"
+        case .abandoned: "Abandonada"
+        case .awarded: "Decidida fora de campo"
         case .postponed: "Adiada"
         case .cancelled: "Cancelada"
         case .unknown: "Situação indefinida"
@@ -392,6 +415,7 @@ extension MatchStatus {
             speech: AVSpeechService(),
             pollInterval: .seconds(2)
         ),
+        settings: AppSettings(),
         matchID: SampleMatches.liveComeback.id
     )
 }

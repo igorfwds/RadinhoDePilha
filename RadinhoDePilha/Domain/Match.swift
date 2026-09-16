@@ -7,18 +7,64 @@ nonisolated enum MatchStatus: String, Hashable, Sendable, CaseIterable {
     case halfTime
     case secondHalf
     case extraTime
+
+    /// Interval before or during extra time.
+    case breakTime
+
     case penaltyShootout
+
+    /// Under way, but the provider cannot say which period or minute.
+    ///
+    /// Rare, and the provider documents it as such. Distinct from ``unknown`` because the match
+    /// *is* being played: treating it as an unknown state would stop polling on a live match, which
+    /// is the worst possible moment to stop.
+    case inProgress
+
+    /// Halted by the referee and expected to resume in a few minutes.
+    case interrupted
+
+    /// Halted by the referee, possibly to be replayed another day.
+    case suspended
+
     case finished
+
+    /// Abandoned before the end, for weather, safety or lack of officials.
+    case abandoned
+
+    /// Decided off the pitch: a technical loss or a walkover.
+    ///
+    /// Kept apart from ``cancelled`` because the match has a result, even though it was not played
+    /// to completion.
+    case awarded
+
     case postponed
     case cancelled
     case unknown
 
-    /// Whether the match is under way, which decides if polling should keep running.
+    /// Whether the app should keep polling.
+    ///
+    /// Broader than "the ball is rolling": a suspended or interrupted match has not ended, and the
+    /// listener needs to be told when it resumes. Stopping the loop would leave them waiting on
+    /// news that never comes.
     var isLive: Bool {
         switch self {
-        case .firstHalf, .halfTime, .secondHalf, .extraTime, .penaltyShootout:
+        case .firstHalf, .halfTime, .secondHalf, .extraTime, .breakTime,
+             .penaltyShootout, .inProgress, .interrupted, .suspended:
             true
-        case .scheduled, .finished, .postponed, .cancelled, .unknown:
+        case .scheduled, .finished, .abandoned, .awarded, .postponed, .cancelled, .unknown:
+            false
+        }
+    }
+
+    /// Whether play is actually happening, as opposed to the match merely being open.
+    ///
+    /// Used where the distinction matters to the narration: an interrupted match should not be
+    /// described as being in its second half.
+    var isBallInPlay: Bool {
+        switch self {
+        case .firstHalf, .secondHalf, .extraTime, .penaltyShootout, .inProgress:
+            true
+        default:
             false
         }
     }

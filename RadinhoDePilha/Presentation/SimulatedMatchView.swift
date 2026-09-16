@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Replays a recorded match as if it were happening now.
 ///
-/// Reuses ``MatchNarrationView`` deliberately — the same screen, the same view model, the same
+/// Reuses ``MatchNarrationView`` deliberately, the same screen, the same view model, the same
 /// narration path. A simulation that ran through different code would prove nothing about the app
 /// people will actually use.
 ///
@@ -23,7 +23,7 @@ struct SimulatedMatchView: View {
     var body: some View {
         Group {
             if let session {
-                MatchNarrationView(viewModel: session.viewModel, matchID: session.matchID)
+                MatchNarrationView(viewModel: session.viewModel, settings: settings, matchID: session.matchID)
             } else {
                 setup
             }
@@ -35,10 +35,10 @@ struct SimulatedMatchView: View {
         Form {
             Section {
                 Picker("Ritmo", selection: $secondsPerMinute) {
-                    Text("Rápido — 1s por minuto").tag(1.0)
-                    Text("Médio — 2s por minuto").tag(2.0)
-                    Text("Lento — 5s por minuto").tag(5.0)
-                    Text("Tempo real — 60s por minuto").tag(60.0)
+                    Text("Rápido, 1s por minuto").tag(1.0)
+                    Text("Médio, 2s por minuto").tag(2.0)
+                    Text("Lento, 5s por minuto").tag(5.0)
+                    Text("Tempo real, 60s por minuto").tag(60.0)
                 }
                 .pickerStyle(.inline)
             } header: {
@@ -84,7 +84,6 @@ struct SimulatedMatchView: View {
             provider: provider,
             engine: TemplateNarrationEngine(persona: settings.persona),
             speech: speech,
-            rate: settings.rate,
             // Polls roughly once per simulated minute, so no event waits long to be noticed.
             pollInterval: .milliseconds(Int(secondsPerMinute * 1000))
         )

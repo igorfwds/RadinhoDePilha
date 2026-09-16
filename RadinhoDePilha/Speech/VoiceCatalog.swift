@@ -29,7 +29,7 @@ nonisolated struct InstalledVoice: Identifiable, Hashable, Sendable {
     }
 
     /// Label combining name and quality, for display and for VoiceOver.
-    var displayName: String { "\(name) — \(quality.displayName)" }
+    var displayName: String { "\(name), \(quality.displayName)" }
 }
 
 /// The voices this device can narrate with.
@@ -40,7 +40,7 @@ nonisolated struct InstalledVoice: Identifiable, Hashable, Sendable {
 ///
 /// The distinction is not cosmetic for this project. A compact voice speaking continuously for
 /// ninety minutes is markedly harder to listen to, and a participant in an accessibility
-/// evaluation may well attribute that fatigue to the narration rather than to the voice — which
+/// evaluation may well attribute that fatigue to the narration rather than to the voice, which
 /// would contaminate the finding.
 nonisolated enum VoiceCatalog {
     static let language = "pt-BR"

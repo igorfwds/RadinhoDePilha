@@ -14,7 +14,7 @@ import Observation
 ///
 /// It used to. Everything known was queued at once, and because the speech queue orders by
 /// priority, the listener heard every goal first and "Começa o jogo" last. Worse, the sentences
-/// carry the score inside them, so the app announced 2×1 and then announced 0×1 — for someone
+/// carry the score inside them, so the app announced 2×1 and then announced 0×1, for someone
 /// who cannot see the screen, plain misinformation with no way to catch it.
 ///
 /// Play now behaves like switching a radio on mid-match: what already happened is marked as heard
@@ -55,13 +55,6 @@ final class MatchNarrationViewModel {
     /// polling immediately rather than one interval later.
     private var liveTask: Task<Void, Never>?
 
-    var rate: SpeechRate {
-        didSet {
-            guard rate != oldValue else { return }
-            Task { await speech.setRate(rate) }
-        }
-    }
-
     // MARK: - Dependencies
 
     private let provider: MatchDataProvider
@@ -75,8 +68,8 @@ final class MatchNarrationViewModel {
     /// Injected because the right value differs by provider: the simulated provider needs a short
     /// gap for the match to be heard moving, while API-Football bills per request.
     ///
-    /// The default follows the vendor's own guidance — one call per minute for fixtures in
-    /// progress — rather than a guess. Their data refreshes every fifteen seconds, so polling
+    /// The default follows the vendor's own guidance, one call per minute for fixtures in
+    /// progress, rather than a guess. Their data refreshes every fifteen seconds, so polling
     /// faster buys little and risks the firewall: exceeding the per-minute rate can get an account
     /// blocked without notice.
     private let pollInterval: Duration
@@ -88,13 +81,11 @@ final class MatchNarrationViewModel {
         provider: MatchDataProvider,
         engine: any NarrationEngine = TemplateNarrationEngine(),
         speech: any SpeechService,
-        rate: SpeechRate = .normal,
         pollInterval: Duration = .seconds(60)
     ) {
         self.provider = provider
         self.engine = engine
         self.speech = speech
-        self.rate = rate
         self.pollInterval = pollInterval
     }
 
@@ -141,7 +132,7 @@ final class MatchNarrationViewModel {
 
         guard match.isLive else {
             // Cuts off whatever is queued. Hearing "esta partida já terminou" only after the
-            // remaining commentary drains makes the button look broken — the answer has to
+            // remaining commentary drains makes the button look broken, the answer has to
             // arrive while the listener still connects it to the tap.
             await announceNotLive(match)
             return
@@ -152,6 +143,15 @@ final class MatchNarrationViewModel {
         // Confirming out loud is not decoration. Play that produces silence until the next event
         // is indistinguishable from a frozen app for someone who cannot see the button change.
         await speech.speakNow("Narração ao vivo.", priority: .normal)
+
+        // Then the latest moment, so resuming lands the listener in the present instead of in
+        // silence. Reported from use: pausing and resuming with no new event in between left the
+        // narrator mute, which reads as broken rather than as "nothing has happened yet".
+        //
+        // Only the most recent one, reciting the backlog is the defect this whole design avoids.
+        if let latest = narrations.last {
+            await speech.speak(latest)
+        }
 
         startLiveLoop(matchID: match.id)
     }
@@ -240,6 +240,10 @@ final class MatchNarrationViewModel {
             "A partida ainda não começou."
         case .finished:
             "Esta partida já terminou."
+        case .abandoned:
+            "Esta partida foi abandonada e não será concluída."
+        case .awarded:
+            "Esta partida foi decidida fora de campo, sem ser jogada até o fim."
         case .postponed:
             "Esta partida foi adiada."
         case .cancelled:
@@ -301,7 +305,7 @@ final class MatchNarrationViewModel {
     /// which is the behaviour described in the project's bookmark and replay feature.
     ///
     /// Interrupts whatever is being said. Tapping a moment and then waiting through the previous
-    /// sentence — or through every sentence tapped before it — makes the list feel unresponsive,
+    /// sentence, or through every sentence tapped before it, makes the list feel unresponsive,
     /// and on a screen the listener cannot see, an unanswered tap gives no sign that it landed.
     func replay(_ narration: Narration) async {
         await speech.speakNow(narration)
@@ -319,7 +323,7 @@ final class MatchNarrationViewModel {
     /// Re-narrating the existing events is the point: a listener who changes persona expects the
     /// match they are reading to be phrased the new way, not only the events still to come.
     ///
-    /// ``spokenIDs`` is left untouched. The events already happened and were already heard —
+    /// ``spokenIDs`` is left untouched. The events already happened and were already heard 
     /// rewording them is not a reason to say them again, and re-speaking a match on a settings
     /// change would be the same defect that made play recite the backlog.
     func setPersona(_ persona: NarratorPersona) {

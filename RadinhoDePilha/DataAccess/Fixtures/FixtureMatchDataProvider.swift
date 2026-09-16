@@ -3,8 +3,8 @@ import Foundation
 /// Matches loaded from API-Football responses recorded to disk.
 ///
 /// Recorded payloads serve two purposes the live provider cannot. They make development and tests
-/// deterministic and free of quota — the free plan allows a hundred requests a day, which a single
-/// polled match would exhaust — and they let the app be demonstrated without waiting for Náutico
+/// deterministic and free of quota, the free plan allows a hundred requests a day, which a single
+/// polled match would exhaust, and they let the app be demonstrated without waiting for Náutico
 /// to be playing, which matters for a dissertation defence scheduled independently of the fixture
 /// list.
 ///
@@ -21,7 +21,7 @@ nonisolated enum RecordedMatches {
     /// Náutico 1×0 Sport, Pernambucano 2024, at the Estádio Eládio de Barros Carvalho.
     ///
     /// Used to preview the narrator personas. The Clássico dos Clássicos decided by a single goal
-    /// — Patrick Allan at 58 minutes — is the most recognisable moment available: it is the only
+    ///, Patrick Allan at 58 minutes, is the most recognisable moment available: it is the only
     /// Náutico win over Sport in the seasons the free plan reaches.
     static let nauticoSport = "fixture-1147708"
 
@@ -61,7 +61,7 @@ nonisolated enum RecordedMatches {
 /// Provider backed by recorded responses.
 ///
 /// Conforms to the same contract as the live provider, so screens and view models cannot tell the
-/// difference — which is the practical test of whether the seam in ADR-001 actually holds.
+/// difference, which is the practical test of whether the seam in ADR-001 actually holds.
 nonisolated struct FixtureMatchDataProvider: MatchDataProvider {
     private let matches: [Match]
 

@@ -4,7 +4,7 @@ import Foundation
 ///
 /// The only type in the app that performs network I/O, and the only one that knows the vendor
 /// exists. Everything it returns is domain vocabulary, so swapping vendors means writing a
-/// sibling of this file and changing one line in the composition root — the promise of ADR-001.
+/// sibling of this file and changing one line in the composition root, the promise of ADR-001.
 ///
 /// ## One request per cycle
 ///
@@ -68,7 +68,7 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
     /// The next fixture for a team that has not kicked off yet.
     ///
     /// Beyond ``MatchDataProvider`` because it answers a question only this app asks: what to say
-    /// when there is no match under way. Returning `nil` is a normal outcome — the season ends,
+    /// when there is no match under way. Returning `nil` is a normal outcome, the season ends,
     /// and there is genuinely nothing next.
     func nextFixture(forTeam teamID: Int) async throws -> Match? {
         let items: [APIFootballFixtureItem] = try await get(
