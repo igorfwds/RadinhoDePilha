@@ -16,6 +16,14 @@ struct SettingsView: View {
 
     @State private var voices: [InstalledVoice] = []
 
+    /// Whether a voice better than compact exists, read once rather than per render.
+    @State private var hasHighQualityVoice = false
+
+    /// Identifier of the voice in use, recomputed only when the list or the choice changes.
+    private var selectedVoiceID: String? {
+        settings.resolvedVoice(among: voices)?.id
+    }
+
     /// Real match used to preview the personas, loaded once.
     @State private var showcase: PersonaShowcase?
 
@@ -29,7 +37,10 @@ struct SettingsView: View {
             }
             .navigationTitle("Ajustes")
             .task {
+                // Read once. Querying the system voice list is expensive, and doing it while the
+                // list renders is what made this screen stutter.
                 voices = VoiceCatalog.available()
+                hasHighQualityVoice = voices.contains { $0.quality > .compact }
                 showcase = PersonaShowcase.bundled() ?? .sample()
             }
         }
@@ -99,12 +110,12 @@ struct SettingsView: View {
                     row(
                         title: voice.name,
                         subtitle: "Qualidade \(voice.quality.displayName.lowercased())",
-                        isSelected: settings.resolvedVoice?.id == voice.id
+                        isSelected: selectedVoiceID == voice.id
                     )
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(voice.displayName)
-                .accessibilityValue(settings.resolvedVoice?.id == voice.id ? "Selecionada" : "")
+                .accessibilityValue(selectedVoiceID == voice.id ? "Selecionada" : "")
                 .accessibilityHint("Toque duas vezes para escolher e ouvir um exemplo")
             }
         } header: {
@@ -113,7 +124,7 @@ struct SettingsView: View {
             // Surfaced only when it applies. Telling someone to download a better voice when they
             // already have one would be noise; withholding it when they do not would leave them
             // assuming the compact voice is the best the app can do.
-            if VoiceCatalog.hasHighQualityVoice() {
+            if hasHighQualityVoice {
                 Text("As vozes aprimoradas e premium são mais confortáveis em narrações longas.")
             } else {
                 Text(

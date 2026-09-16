@@ -15,15 +15,25 @@ nonisolated struct PendingUtterance: Hashable, Sendable {
     var isOnDemand = false
 }
 
-/// Ordered set of utterances waiting for the synthesiser.
+/// Utterances waiting for the synthesiser.
 ///
 /// A separate type rather than an array inside the speech service, because the ordering rules are
 /// the interesting part and they deserve to be testable without audio hardware, without real time
 /// passing, and without a simulator.
 ///
-/// Ordering puts anything requested by the listener first, then priority, then arrival. A goal that
-/// arrives after a substitution is spoken before it; two goals arriving together are spoken in the
-/// order they happened; and a moment the listener tapped is spoken before either.
+/// ## Why match events are strictly chronological
+///
+/// They were once ordered by priority, so a goal reported in the same polling cycle as an earlier
+/// booking was spoken first. Heard rather than read, that is disorienting: commentary is a
+/// narrative, and the sentences carry the running score inside them, so hearing them out of order
+/// means hearing the score move backwards.
+///
+/// Priority survives for the two jobs it is actually good at — deciding what may cut off speech in
+/// progress, and what may be dropped when the queue floods — but it no longer reorders the
+/// timeline. Events leave this queue in the order they arrived, which is the order they happened.
+///
+/// Anything the listener asked for still jumps ahead of everything, because a control that answers
+/// late reads as a control that did nothing.
 nonisolated struct SpeechQueue: Sendable {
     private var items: [PendingUtterance] = []
 
@@ -39,28 +49,14 @@ nonisolated struct SpeechQueue: Sendable {
         items.append(utterance)
     }
 
-    /// Removes and returns the most urgent utterance.
+    /// Removes and returns the next utterance: a listener request if one is waiting, otherwise the
+    /// oldest match event.
     mutating func takeNext() -> PendingUtterance? {
         guard !items.isEmpty else { return nil }
 
-        var chosen = items.startIndex
+        let index = items.firstIndex(where: \.isOnDemand) ?? items.startIndex
 
-        for index in items.indices where isMoreUrgent(items[index], than: items[chosen]) {
-            chosen = index
-        }
-
-        return items.remove(at: chosen)
-    }
-
-    /// Whether one utterance should be spoken before another.
-    ///
-    /// Strict comparison in both clauses, so equal candidates keep their arrival order.
-    private func isMoreUrgent(_ candidate: PendingUtterance, than current: PendingUtterance) -> Bool {
-        if candidate.isOnDemand != current.isOnDemand {
-            return candidate.isOnDemand
-        }
-
-        return candidate.priority > current.priority
+        return items.remove(at: index)
     }
 
     mutating func removeAll() {
@@ -70,11 +66,23 @@ nonisolated struct SpeechQueue: Sendable {
     /// Drops anything the listener previously asked for.
     ///
     /// Used when they ask for something else. Tapping a second moment means they no longer want
-    /// the first, and queueing both would make every tap add to a backlog they have to sit
-    /// through. Match events are untouched: discarding a goal because somebody replayed a card
-    /// would lose it for good.
+    /// the first, and queueing both would make every tap add to a backlog they have to sit through.
     mutating func removeOnDemand() {
         items.removeAll(where: \.isOnDemand)
+    }
+
+    /// Keeps only the most recent match event, discarding the ones queued behind it.
+    ///
+    /// Called when the listener interrupts. While they were asking for something else the match
+    /// carried on, and returning to a backlog of stale commentary is not what "live" means — they
+    /// want where the match *is*, not a recap of the seconds they missed. The newest event is kept
+    /// rather than none, so resuming says something instead of falling silent.
+    ///
+    /// Requests are untouched: this discards the match's queue, not the listener's.
+    mutating func keepOnlyLatestEvent() {
+        guard let latest = items.last(where: { !$0.isOnDemand }) else { return }
+
+        items.removeAll { !$0.isOnDemand && $0 != latest }
     }
 
     /// Drops queued utterances below the given priority.

@@ -95,6 +95,11 @@ actor AVSpeechService: SpeechService {
         // Replaces any earlier request rather than joining a queue behind it: tapping twice means
         // the first answer is no longer wanted.
         queue.removeOnDemand()
+
+        // The match kept going while the listener was asking for something else. Returning to a
+        // backlog of stale commentary is not what "live" means, so only the newest event survives.
+        queue.keepOnlyLatestEvent()
+
         queue.enqueue(utterance)
 
         // Unconditional, which is the difference from `speak`. The interruption policy governs
@@ -131,13 +136,13 @@ actor AVSpeechService: SpeechService {
     private func enqueue(_ utterance: PendingUtterance) async {
         queue.enqueue(utterance)
 
-        if let current = currentPriority,
-           policy.allowsInterrupting(current: current, with: utterance.priority) {
-            // Cutting the current sentence short. The pump loop resumes as soon as the
-            // synthesiser reports the cancellation, and then picks the highest priority pending.
-            await synthesizer().stop()
-        }
-
+        // Deliberately does not interrupt. Match events are narrated in the order they happened,
+        // and cutting off "cartão amarelo para Wanderson" to start the goal that came after it
+        // would leave the listener with half a sentence and a broken timeline. Interruption is
+        // reserved for what the listener asks for; see `speakNow`.
+        //
+        // `policy` still describes the rule and is exercised by its own tests, because the
+        // dissertation's OE1 commits to a priority queue and the reasoning is part of the result.
         startPumpIfNeeded()
     }
 

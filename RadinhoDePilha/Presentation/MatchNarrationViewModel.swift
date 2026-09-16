@@ -206,9 +206,13 @@ final class MatchNarrationViewModel {
 
         let newEvents = fresh.events.filter { !spokenIDs.contains($0.id) }
 
-        // Priority ordering is correct here and only here: these events arrived together, so
-        // speaking a goal before a substitution reflects what matters, not a scrambled timeline.
-        for narration in engine.narrate(newEvents, in: fresh) {
+        // Chronological, one after another. Events arrive from the mapper in the order they
+        // happened, and that order is preserved all the way to the synthesiser: the sentences
+        // carry the running score inside them, so speaking a later goal before an earlier booking
+        // makes the score appear to move backwards.
+        for event in newEvents {
+            guard let narration = engine.narrate(event, in: fresh) else { continue }
+
             spokenIDs.insert(narration.id)
             await speech.speak(narration)
         }
