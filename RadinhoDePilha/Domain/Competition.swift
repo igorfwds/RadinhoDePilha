@@ -10,12 +10,22 @@ import Foundation
 nonisolated enum Competition: String, Hashable, Sendable, CaseIterable {
     case brasileiraoSerieA
     case brasileiraoSerieB
+    case brasileiraoSerieC
+
+    /// State championship of Pernambuco.
+    ///
+    /// Present although the app follows only Série B, because recorded matches used for
+    /// demonstration come from it. Representing a Pernambucano fixture as Série B would put a
+    /// false statement into the domain, and the narration reads the competition name aloud.
+    case pernambucano
 
     /// Human-readable name, in Brazilian Portuguese, for narration and accessibility labels.
     var displayName: String {
         switch self {
         case .brasileiraoSerieA: "Campeonato Brasileiro Série A"
         case .brasileiraoSerieB: "Campeonato Brasileiro Série B"
+        case .brasileiraoSerieC: "Campeonato Brasileiro Série C"
+        case .pernambucano: "Campeonato Pernambucano"
         }
     }
 }

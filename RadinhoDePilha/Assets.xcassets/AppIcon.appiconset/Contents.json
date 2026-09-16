@@ -1,6 +1,7 @@
 {
   "images" : [
     {
+      "filename" : "logo_radinho_de_pilha_1024x1024.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -12,6 +13,7 @@
           "value" : "dark"
         }
       ],
+      "filename" : "logo_radinho_de_pilha_dark_1024x1024.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
@@ -23,6 +25,7 @@
           "value" : "tinted"
         }
       ],
+      "filename" : "logo_radinho_de_pilha_tinted_1024x1024.jpeg",
       "idiom" : "universal",
       "platform" : "ios",
       "size" : "1024x1024"
