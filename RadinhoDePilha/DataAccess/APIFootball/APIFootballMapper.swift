@@ -192,17 +192,31 @@ nonisolated enum APIFootballMapper {
         }
 
         let status = match.status
+        let elapsed = match.elapsedMinutes
+
+        // Two signals, because neither is sufficient alone. Status says what is happening now but
+        // not how far the match got: a halted match reports `INT` whether it stopped in the tenth
+        // minute or the eightieth. The elapsed minute fills that gap.
+        let halted: Set<MatchStatus> = [.interrupted, .suspended, .abandoned]
         let started: Set<MatchStatus> = [
-            .firstHalf, .halfTime, .secondHalf, .extraTime, .penaltyShootout, .finished
+            .firstHalf, .halfTime, .secondHalf, .extraTime, .breakTime,
+            .penaltyShootout, .inProgress, .finished
         ]
-        guard started.contains(status) else { return [] }
+
+        guard started.contains(status) || halted.contains(status) || elapsed != nil else {
+            return []
+        }
 
         boundary(.periodStart, minute: 0, stoppage: nil, detail: "1st half")
 
-        let firstHalfOver: Set<MatchStatus> = [
-            .halfTime, .secondHalf, .extraTime, .penaltyShootout, .finished
+        let firstHalfOverByStatus: Set<MatchStatus> = [
+            .halfTime, .secondHalf, .extraTime, .breakTime, .penaltyShootout, .finished
         ]
-        if firstHalfOver.contains(status) {
+        // Past the interval by the clock counts too, which is what covers a match halted in the
+        // second half: the status says only "interrupted", the minute says which half.
+        let firstHalfOver = firstHalfOverByStatus.contains(status) || (elapsed ?? 0) > 45
+
+        if firstHalfOver {
             boundary(
                 .periodEnd,
                 minute: 45,
@@ -211,13 +225,18 @@ nonisolated enum APIFootballMapper {
             )
         }
 
-        let secondHalfStarted: Set<MatchStatus> = [
-            .secondHalf, .extraTime, .penaltyShootout, .finished
+        let secondHalfStartedByStatus: Set<MatchStatus> = [
+            .secondHalf, .extraTime, .breakTime, .penaltyShootout, .finished
         ]
-        if secondHalfStarted.contains(status) {
+        let secondHalfStarted = secondHalfStartedByStatus.contains(status) || (elapsed ?? 0) > 45
+
+        if secondHalfStarted {
             boundary(.periodStart, minute: 45, stoppage: nil, detail: "2nd half")
         }
 
+        // Abandoned matches never reach a final whistle, and saying otherwise would state
+        // something that did not happen. The listener is told the match was abandoned instead,
+        // which the view model handles as an exception state.
         if status == .finished {
             boundary(
                 .periodEnd,
