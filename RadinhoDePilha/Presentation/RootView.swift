@@ -68,17 +68,15 @@ struct RootView: View {
             }
 
             SwiftUI.Tab("Ajustes", systemImage: "gearshape", value: Tab.settings) {
-                SettingsView(
-                    settings: settings,
-                    speech: speech,
-                    isNarratingLive: viewModel.isNarrating
-                )
+                SettingsView(settings: settings, speech: speech)
             }
         }
         // Applied at the root so every screen honours the choice, including the ones that only
         // exist for testing. Left untouched when the listener follows the system, rather than
         // overridden with a value that would silently replace their own setting.
         .modifier(TextSizeOverride(size: settings.textSize.dynamicTypeSize))
+        // Held only while narrating, and released when the app leaves the foreground.
+        .keepsScreenAwake(viewModel.isNarrating)
         .task {
             // Configures the audio session before the first utterance, so the first goal is not
             // the one that pays for the setup.
