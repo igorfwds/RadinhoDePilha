@@ -50,8 +50,12 @@ is latent rather than visible.
 
 ## Polling interval
 
-Live narration polls every 15 seconds, the vendor's refresh interval. Polling faster adds no detail,
-since the data changes at most that often, but it lowers the average delay between the vendor
-recording an event and the app speaking it: about 7.5 seconds at 15 seconds, about 2.5 at 5. On the
-Pro plan a 5-second interval costs about 1,300 requests a match, against 7,500 a day and 300 a
-minute. Not changed on the day of the first live test.
+Live narration polls every 5 seconds, and the wait between the scheduled kick-off and the vendor
+reporting the match started polls every 15. Both were chosen on 26 September 2026 after the first
+paid-plan test, replacing 15 and 60 seconds.
+
+The vendor refreshes at most every 15 seconds, so faster polling adds no detail; it only lowers
+the average delay between the vendor recording an event and the app speaking it, from about 7.5
+seconds to about 2.5. At 5 seconds a match costs about 1,560 requests, against 7,500 a day and 300
+a minute. Whether this matters depends on how far the vendor itself lags behind the pitch, which
+was to be measured against the TV broadcast of fixture 1520896.
