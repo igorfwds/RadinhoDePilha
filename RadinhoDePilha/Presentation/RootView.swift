@@ -24,6 +24,12 @@ struct RootView: View {
     private let speech: any SpeechService
     private let recordedMatch: Match?
 
+    /// Live data source, or `nil` without a credential.
+    private let liveProvider: APIFootballProvider?
+
+    /// Gap between polls when following a real match.
+    private let livePollInterval: Duration
+
     private enum Tab: Hashable {
         case narration
         case modes
@@ -35,13 +41,17 @@ struct RootView: View {
         viewModel: MatchNarrationViewModel,
         speech: any SpeechService,
         matchID: String,
-        recordedMatch: Match?
+        recordedMatch: Match?,
+        liveProvider: APIFootballProvider?,
+        livePollInterval: Duration
     ) {
         self.settings = settings
         self.viewModel = viewModel
         self.speech = speech
         self.followedMatchID = matchID
         self.recordedMatch = recordedMatch
+        self.liveProvider = liveProvider
+        self.livePollInterval = livePollInterval
     }
 
     var body: some View {
@@ -56,6 +66,10 @@ struct RootView: View {
                     settings: settings,
                     matchID: followedMatchID
                 )
+                // A new identity per match. The screen keeps its view model in `@State`, which
+                // SwiftUI preserves across updates, so without this the old session would stay on
+                // screen after a live match replaced it.
+                .id(followedMatchID)
             }
 
             SwiftUI.Tab("Modos", systemImage: "slider.horizontal.3", value: Tab.modes) {
@@ -63,6 +77,7 @@ struct RootView: View {
                     recordedMatch: recordedMatch,
                     settings: settings,
                     speech: speech,
+                    liveProvider: liveProvider,
                     onFollowLiveMatch: follow(liveMatch:)
                 )
             }
@@ -99,9 +114,31 @@ struct RootView: View {
     /// Moving to the tab is part of the answer, not decoration: the listener asked to hear a match,
     /// and starting audio while leaving them on another screen would be disorienting for someone
     /// navigating by screen reader.
+    ///
+    /// The session is replaced, not redirected. The screen used to receive only the new match
+    /// identifier while its view model still pointed at the recorded replay, so it looked the live
+    /// match up in a 2022 recording, failed, and showed an error at the one moment it mattered.
+    /// It also polled every two seconds, a pace chosen for compressed replay time.
     private func follow(liveMatch match: Match) {
-        followedMatchID = match.id
-        selectedTab = .narration
+        guard let liveProvider else { return }
+
+        Task {
+            // Stops the replay and empties the queue, so nothing from 2022 is spoken over the
+            // live match.
+            await viewModel.stopNarrating()
+
+            let live = MatchNarrationViewModel(
+                provider: liveProvider,
+                engine: TemplateNarrationEngine(persona: settings.persona),
+                speech: speech,
+                pollInterval: livePollInterval
+            )
+            live.startAfterLoading()
+
+            viewModel = live
+            followedMatchID = match.id
+            selectedTab = .narration
+        }
     }
 
     /// Pushes stored preferences into the services on launch.

@@ -68,8 +68,11 @@ final class LiveMatchFinder {
             let ours = live.first { $0.homeTeam.id == teamID || $0.awayTeam.id == teamID }
 
             if let ours {
+                // Not announced here. The caller tears down the current session before starting
+                // the live one, which clears the speech queue, so anything said now would be cut
+                // off mid-sentence. The narration's own opening names the teams instead, and that
+                // is the confirmation the listener hears.
                 outcome = .live(ours)
-                await speech.speakNow(liveAnnouncement(for: ours), priority: .high)
             } else {
                 let next = try? await nextFixture()
                 outcome = .idle(next: next)
@@ -100,13 +103,6 @@ final class LiveMatchFinder {
     }
 
     // MARK: - Wording
-
-    private func liveAnnouncement(for match: Match) -> String {
-        """
-        Partida em andamento: \(match.homeTeam.shortName) e \(match.awayTeam.shortName). \
-        Começando a narração.
-        """
-    }
 
     /// Says there is no match, and when the next one is.
     ///

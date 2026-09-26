@@ -8,10 +8,9 @@ struct RadinhoDePilhaApp: App {
     /// different vendor, is a change here and nowhere else. The screens, the narration engine and
     /// their tests never learn which provider won.
     ///
-    /// Today it replays Náutico 4×3 Tombense, a real Série B match, decoded from a recorded
-    /// API-Football response, as if it were happening now. Live data waits on a paid plan: the
-    /// free tier only reaches seasons 2022 to 2024, so the current season cannot be requested at
-    /// all, and its hundred daily requests would not survive one polled match regardless.
+    /// The narration tab opens on Náutico 4×3 Tombense, a real Série B match decoded from a recorded
+    /// API-Football response and replayed as if it were happening now. Live data takes over when
+    /// the live lookup finds a match in progress; see `RootView.follow(liveMatch:)`.
     private let provider: MatchDataProvider
     private let matchID: String
 
@@ -21,6 +20,19 @@ struct RadinhoDePilhaApp: App {
 
     private let speech = AVSpeechService()
     private let settings = AppSettings()
+
+    /// Live data, available once a credential is configured.
+    private let liveProvider: APIFootballProvider? = AppConfiguration.apiFootballKey.map {
+        APIFootballProvider(apiKey: $0)
+    }
+
+    /// Fifteen seconds, the vendor's own refresh interval.
+    ///
+    /// Polling faster buys nothing, since the data does not change more often. Polling at the one
+    /// call per minute the vendor recommends would delay a goal by up to a minute, which is long
+    /// for someone following by ear. At fifteen seconds a match costs about 450 requests, well
+    /// inside the Pro plan's 7,500 a day, and four calls a minute is nowhere near its limit of 300.
+    private let livePollInterval = Duration.seconds(15)
 
     /// Short because the replay compresses match time. The 60-second default in the view model
     /// follows the vendor's guidance and applies when real data arrives.
@@ -49,7 +61,9 @@ struct RadinhoDePilhaApp: App {
                 ),
                 speech: speech,
                 matchID: matchID,
-                recordedMatch: recordedMatch
+                recordedMatch: recordedMatch,
+                liveProvider: liveProvider,
+                livePollInterval: livePollInterval
             )
         }
     }

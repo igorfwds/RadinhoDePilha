@@ -38,16 +38,24 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
     // MARK: - MatchDataProvider
 
     func liveMatches(competition: Competition, season: Int) async throws -> [Match] {
-        // `live` takes league identifiers, not a season: a match in progress belongs to whatever
-        // season is current, and asking for both is rejected.
+        // Asks for every live fixture and filters locally, rather than passing the league.
+        //
+        // The documentation shows `live=39-61-48`, but a single identifier is rejected: `live=72`
+        // comes back with "The Live field does not match the regular expression: [id-id-id...] or
+        // string: all". Two or more identifiers pass, one does not. Found against the live API an
+        // hour before the first real match the app was meant to follow, and absent from the docs.
+        //
+        // `all` costs the same single request, and filtering here does not depend on that quirk
+        // staying the way it is. Season is not sent either way: a match in progress belongs to
+        // whatever season is current.
         let items: [APIFootballFixtureItem] = try await get(
             path: "fixtures",
-            query: [URLQueryItem(name: "live", value: String(leagueID))]
+            query: [URLQueryItem(name: "live", value: "all")]
         )
 
-        return items.map { item in
-            APIFootballMapper.match(from: item, events: item.events ?? [])
-        }
+        return items
+            .filter { $0.league.id == leagueID }
+            .map { APIFootballMapper.match(from: $0, events: $0.events ?? []) }
     }
 
     func match(withID id: String) async throws -> Match {
