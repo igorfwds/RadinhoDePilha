@@ -100,6 +100,76 @@ struct APIFootballMapperTests {
         #expect(envelope.errors.planRestriction?.contains("2022 to 2024") == true)
     }
 
+    // MARK: - Errors inside HTTP 200
+
+    /// Decodes a response envelope from a JSON literal, the way the vendor sends it.
+    private func envelope(_ json: String) throws -> APIFootballResponse<[APIFootballFixtureItem]> {
+        try Self.decoder()
+            .decode(APIFootballResponse<[APIFootballFixtureItem]>.self, from: Data(json.utf8))
+    }
+
+    @Test("A missing or invalid key is reported as refused access")
+    func missingKeyIsUnauthorized() throws {
+        // Captured from the live API with no key sent. It arrives with HTTP 200, and used to fall
+        // through to a generic provider failure heard as "serviço indisponível".
+        let response = try envelope("""
+        {"response": [], "results": 0,
+         "errors": {"token": "Error/Missing application key. Go to https://www.api-football.com/documentation-v3 to learn how to get your API application key."}}
+        """)
+
+        #expect(APIFootballProvider.domainError(for: response.errors) == .unauthorized)
+    }
+
+    @Test("The per-minute limit is reported as quota, like the daily one")
+    func rateLimitIsQuotaExceeded() throws {
+        // Also HTTP 200. Only the daily `requests` key used to map to quota.
+        let response = try envelope("""
+        {"response": [], "results": 0,
+         "errors": {"rateLimit": "Too many requests. You have exceeded the limit of requests per minute of your subscription."}}
+        """)
+
+        #expect(APIFootballProvider.domainError(for: response.errors) == .quotaExceeded)
+    }
+
+    @Test("The daily quota is still reported as quota")
+    func dailyQuotaIsQuotaExceeded() throws {
+        let response = try envelope("""
+        {"response": [], "results": 0,
+         "errors": {"requests": "You have reached the request limit for the day."}}
+        """)
+
+        #expect(APIFootballProvider.domainError(for: response.errors) == .quotaExceeded)
+    }
+
+    @Test("A season outside the plan is still reported as refused access")
+    func planRestrictionIsUnauthorized() throws {
+        let response = try envelope("""
+        {"response": [], "results": 0,
+         "errors": {"plan": "Free plans do not have access to this season, try from 2022 to 2024."}}
+        """)
+
+        #expect(APIFootballProvider.domainError(for: response.errors) == .unauthorized)
+    }
+
+    @Test("An unrecognised error key stays a provider failure")
+    func unknownErrorIsProviderFailure() throws {
+        // Not evidence of either known cause, so it is not dressed up as one.
+        let response = try envelope("""
+        {"response": [], "results": 0, "errors": {"somethingElse": "Unexpected."}}
+        """)
+
+        #expect(APIFootballProvider.domainError(for: response.errors) == .providerFailure(status: 200))
+    }
+
+    @Test("An empty errors array is no error at all")
+    func emptyErrorsIsNoError() throws {
+        let response = try envelope("""
+        {"response": [], "results": 0, "errors": []}
+        """)
+
+        #expect(APIFootballProvider.domainError(for: response.errors) == nil)
+    }
+
     // MARK: - Match mapping
 
     @Test("A fixture maps onto the domain with the right score and status")

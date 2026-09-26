@@ -159,19 +159,44 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
     }
 
     private func check(_ errors: APIFootballErrors) throws {
-        guard !errors.isEmpty else { return }
+        if let error = Self.domainError(for: errors) {
+            throw error
+        }
+    }
 
-        if errors.planRestriction != nil {
-            // Asking the free plan for a season it does not cover lands here. It is not a quota
-            // problem and not a missing match: the data exists, the subscription does not reach
-            // it, and saying so plainly is what lets the interface explain itself.
-            throw MatchDataError.unauthorized
+    /// Translates the errors the vendor reports inside an HTTP 200 into domain errors.
+    ///
+    /// Keys are matched rather than messages, because the messages are prose and change. Four are
+    /// known from the live API:
+    ///
+    /// - `plan`: the subscription does not reach the requested season
+    /// - `token`: the key is missing or invalid ("Error/Missing application key")
+    /// - `requests`: the daily quota is used up
+    /// - `rateLimit`: too many requests within a minute
+    ///
+    /// `token` and `rateLimit` used to fall through to a generic provider failure, which the
+    /// listener heard as "o serviço de dados está indisponível". Both have a cause the listener can
+    /// act on or wait out, and naming it is the point of distinguishing them.
+    ///
+    /// Anything else stays a provider failure: an unknown key is not evidence of either cause.
+    static func domainError(for errors: APIFootballErrors) -> MatchDataError? {
+        guard !errors.isEmpty else { return nil }
+
+        let keys = Set(errors.messages.keys.map { $0.lowercased() })
+
+        if keys.contains("plan") || keys.contains("token") {
+            // Neither is a quota problem nor a missing match. With `plan` the data exists but the
+            // subscription does not reach it; with `token` the request was not identified at all.
+            // Both come down to access being refused.
+            return .unauthorized
         }
 
-        if errors.messages.keys.contains(where: { $0.localizedCaseInsensitiveContains("requests") }) {
-            throw MatchDataError.quotaExceeded
+        if keys.contains("requests") || keys.contains("ratelimit") {
+            // Per-day and per-minute limits read the same to the listener: the app has asked too
+            // much, and waiting is the remedy.
+            return .quotaExceeded
         }
 
-        throw MatchDataError.providerFailure(status: 200)
+        return .providerFailure(status: 200)
     }
 }
