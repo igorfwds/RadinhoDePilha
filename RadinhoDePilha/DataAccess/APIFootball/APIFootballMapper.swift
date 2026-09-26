@@ -19,8 +19,16 @@ nonisolated enum APIFootballMapper {
     // MARK: - Match
 
     static func match(from item: APIFootballFixtureItem) -> Match {
-        let home = ClubDirectory.team(id: item.teams.home.id, vendorName: item.teams.home.name)
-        let away = ClubDirectory.team(id: item.teams.away.id, vendorName: item.teams.away.name)
+        let home = ClubDirectory.team(
+            id: item.teams.home.id,
+            vendorName: item.teams.home.name,
+            logo: item.teams.home.logo
+        )
+        let away = ClubDirectory.team(
+            id: item.teams.away.id,
+            vendorName: item.teams.away.name,
+            logo: item.teams.away.logo
+        )
         let status = status(from: item.fixture.status.short)
 
         return Match(

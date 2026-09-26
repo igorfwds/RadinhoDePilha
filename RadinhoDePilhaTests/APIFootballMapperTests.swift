@@ -194,6 +194,21 @@ struct APIFootballMapperTests {
         #expect(match.homeTeam.nickname == "Timbu")
     }
 
+    @Test("Crests come from the vendor's logo field")
+    func crestsAreMapped() throws {
+        // `Team.crestURL` existed from the start but was always nil; the vendor has sent the logo
+        // all along.
+        let match = APIFootballMapper.match(from: try showcaseFixture())
+
+        #expect(match.homeTeam.crestURL?.absoluteString == "https://media.api-sports.io/football/teams/755.png")
+        #expect(match.awayTeam.crestURL?.host == "media.api-sports.io")
+    }
+
+    @Test("A team without a logo simply has no crest")
+    func missingLogoMeansNoCrest() {
+        #expect(ClubDirectory.team(id: 755, vendorName: "Nautico Recife").crestURL == nil)
+    }
+
     @Test("A match in play keeps polling even when the minute is unknown")
     func inProgressStaysLive() {
         // The defect: `LIVE` means in play without a known minute, and treating it as unknown made

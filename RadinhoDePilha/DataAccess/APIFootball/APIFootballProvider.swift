@@ -90,6 +90,19 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
         return items.first.map { APIFootballMapper.match(from: $0) }
     }
 
+    /// The last fixture a team played.
+    func lastFixture(forTeam teamID: Int) async throws -> Match? {
+        let items: [APIFootballFixtureItem] = try await get(
+            path: "fixtures",
+            query: [
+                URLQueryItem(name: "team", value: String(teamID)),
+                URLQueryItem(name: "last", value: "1")
+            ]
+        )
+
+        return items.first.map { APIFootballMapper.match(from: $0) }
+    }
+
     // MARK: - Transport
 
     private func get<Payload: Decodable & Sendable>(
@@ -198,5 +211,21 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
         }
 
         return .providerFailure(status: 200)
+    }
+}
+
+// MARK: - Schedule
+
+nonisolated extension APIFootballProvider: MatchScheduleProvider {
+    /// A domain identifier that is not one of this vendor's numbers cannot name a team here, and is
+    /// answered with nothing rather than with an error: there is simply no such team to look up.
+    func lastMatch(forTeam teamID: String) async throws -> Match? {
+        guard let vendorID = Int(teamID) else { return nil }
+        return try await lastFixture(forTeam: vendorID)
+    }
+
+    func nextMatch(forTeam teamID: String) async throws -> Match? {
+        guard let vendorID = Int(teamID) else { return nil }
+        return try await nextFixture(forTeam: vendorID)
     }
 }
