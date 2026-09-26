@@ -104,9 +104,11 @@ final class LiveMatchFinder {
     /// The match the followed team is playing, among those in progress.
     ///
     /// Shared with ``MatchdayViewModel``, so both ways of reaching a live match agree on which one
-    /// is Náutico's.
+    /// is Náutico's. Checks the status as well as the team: the vendor's live list holds only matches
+    /// in progress, but nothing in the contract promises that, and a scheduled match mistaken for a
+    /// live one would start a narration with nothing to narrate.
     static func match(for teamID: String, in live: [Match]) -> Match? {
-        live.first { $0.homeTeam.id == teamID || $0.awayTeam.id == teamID }
+        live.first { $0.isLive && ($0.homeTeam.id == teamID || $0.awayTeam.id == teamID) }
     }
 
     // MARK: - Wording

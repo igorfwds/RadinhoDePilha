@@ -79,6 +79,9 @@ actor ScriptedMatchDataProvider: MatchDataProvider {
         self.states = states
     }
 
+    /// How many single-match requests were made, for tests that care about quota.
+    var matchRequests: Int { callCount }
+
     func liveMatches(competition: Competition, season: Int) async throws -> [Match] {
         states.isEmpty ? [] : [states[min(callCount, states.count - 1)]]
     }

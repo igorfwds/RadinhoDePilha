@@ -97,13 +97,21 @@ final class MatchNarrationViewModel {
     /// so a standing "start on load" would restart narration the listener had deliberately stopped.
     private var startsAfterNextLoad = false
 
+    /// Spoken ahead of the opening line when narration starts after loading.
+    private var introductionAfterLoad: String?
+
     /// Starts narrating as soon as the match finishes loading.
     ///
     /// Used when the listener asked for a live match from another screen: they pressed a button to
     /// hear it, so making them find and press play as well would be a second request for the same
     /// thing.
-    func startAfterLoading() {
+    ///
+    /// - Parameter introduction: said first, in the same utterance as the opening line. Joining them
+    ///   matters: said separately, the opening would interrupt the introduction, because both are
+    ///   answers the listener is owed at once.
+    func startAfterLoading(introduction: String? = nil) {
         startsAfterNextLoad = true
+        introductionAfterLoad = introduction
     }
 
     func load(matchID: String) async {
@@ -124,7 +132,10 @@ final class MatchNarrationViewModel {
         guard startsAfterNextLoad, match != nil else { return }
 
         startsAfterNextLoad = false
-        await startNarrating()
+        let introduction = introductionAfterLoad
+        introductionAfterLoad = nil
+
+        await startNarrating(introduction: introduction)
     }
 
     /// Stores a freshly fetched match and rebuilds the narration list from it.
@@ -142,7 +153,9 @@ final class MatchNarrationViewModel {
     // MARK: - Live narration
 
     /// Starts following the match from this moment on.
-    func startNarrating() async {
+    ///
+    /// - Parameter introduction: spoken before the opening line, such as "A partida começou".
+    func startNarrating(introduction: String? = nil) async {
         guard !isNarrating else { return }
         guard let match else { return }
 
@@ -165,8 +178,9 @@ final class MatchNarrationViewModel {
         //
         // Names the teams, because this is also the answer to "reproduzir partida ao vivo": after
         // pressing it, hearing which match was found is what confirms the right one was.
+        let opening = "Narração ao vivo, \(match.homeTeam.shortName) e \(match.awayTeam.shortName)."
         await speech.speakNow(
-            "Narração ao vivo, \(match.homeTeam.shortName) e \(match.awayTeam.shortName).",
+            [introduction, opening].compactMap(\.self).joined(separator: " "),
             priority: .normal
         )
 
