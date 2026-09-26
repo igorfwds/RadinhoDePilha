@@ -81,21 +81,18 @@ struct LiveMatchFinderTests {
         )
     }
 
-    @Test("A live Náutico match is found and announced")
+    @Test("A live Náutico match is found, and left to the narration to announce")
     func liveMatchIsFound() async {
-        // The sample provider's live match is Náutico's, and its team id is the one being followed.
+        // Not spoken by the finder: the caller replaces the session and clears the speech queue,
+        // which would cut an announcement off. The narration's opening names the teams instead.
         let match = SampleMatches.liveComeback
         let provider = ScriptedMatchDataProvider(states: [match])
-        let (subject, spy) = finder(
-            provider: provider,
-            speech: SpeechServiceSpy()
-        )
+        let (subject, spy) = finder(provider: provider)
 
         await subject.search(season: match.season)
 
         #expect(subject.outcome == .live(match))
-        // Announced aloud, not only shown: the listener may not be able to read the screen.
-        #expect(await !spy.spokenText.isEmpty)
+        #expect(await spy.spokenText.isEmpty)
     }
 
     @Test("With nothing under way, the absence is announced")

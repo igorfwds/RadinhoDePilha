@@ -91,6 +91,21 @@ final class MatchNarrationViewModel {
 
     // MARK: - Loading
 
+    /// Whether the next successful load should start narration by itself.
+    ///
+    /// One shot, cleared as soon as it is used. The screen reloads every time its tab reappears,
+    /// so a standing "start on load" would restart narration the listener had deliberately stopped.
+    private var startsAfterNextLoad = false
+
+    /// Starts narrating as soon as the match finishes loading.
+    ///
+    /// Used when the listener asked for a live match from another screen: they pressed a button to
+    /// hear it, so making them find and press play as well would be a second request for the same
+    /// thing.
+    func startAfterLoading() {
+        startsAfterNextLoad = true
+    }
+
     func load(matchID: String) async {
         isLoading = true
         errorMessage = nil
@@ -105,6 +120,11 @@ final class MatchNarrationViewModel {
         }
 
         isLoading = false
+
+        guard startsAfterNextLoad, match != nil else { return }
+
+        startsAfterNextLoad = false
+        await startNarrating()
     }
 
     /// Stores a freshly fetched match and rebuilds the narration list from it.
@@ -132,8 +152,8 @@ final class MatchNarrationViewModel {
 
         guard match.isLive else {
             // Cuts off whatever is queued. Hearing "esta partida já terminou" only after the
-            // remaining commentary drains makes the button look broken, the answer has to
-            // arrive while the listener still connects it to the tap.
+            // remaining commentary drains makes the button look broken: the answer has to arrive
+            // while the listener still connects it to the tap.
             await announceNotLive(match)
             return
         }
@@ -142,13 +162,19 @@ final class MatchNarrationViewModel {
 
         // Confirming out loud is not decoration. Play that produces silence until the next event
         // is indistinguishable from a frozen app for someone who cannot see the button change.
-        await speech.speakNow("Narração ao vivo.", priority: .normal)
+        //
+        // Names the teams, because this is also the answer to "reproduzir partida ao vivo": after
+        // pressing it, hearing which match was found is what confirms the right one was.
+        await speech.speakNow(
+            "Narração ao vivo, \(match.homeTeam.shortName) e \(match.awayTeam.shortName).",
+            priority: .normal
+        )
 
         // Then the latest moment, so resuming lands the listener in the present instead of in
         // silence. Reported from use: pausing and resuming with no new event in between left the
         // narrator mute, which reads as broken rather than as "nothing has happened yet".
         //
-        // Only the most recent one, reciting the backlog is the defect this whole design avoids.
+        // Only the most recent one. Reciting the backlog is the defect this whole design avoids.
         if let latest = narrations.last {
             await speech.speak(latest)
         }

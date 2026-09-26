@@ -15,6 +15,12 @@ struct TestModesView: View {
     @Bindable var settings: AppSettings
     let speech: any SpeechService
 
+    /// Live data source, or `nil` when no credential is configured.
+    ///
+    /// Built by the composition root and handed down, so the choice of vendor stays in one place
+    /// as ADR-001 requires, and so the lookup and the narration it starts talk to the same provider.
+    let liveProvider: APIFootballProvider?
+
     /// Hands a live match to the narration screen and brings that screen forward.
     let onFollowLiveMatch: (Match) -> Void
 
@@ -180,13 +186,7 @@ struct TestModesView: View {
     private func liveFinder() -> LiveMatchFinder {
         if let finder { return finder }
 
-        let provider: MatchDataProvider =
-            if let key = AppConfiguration.apiFootballKey {
-                APIFootballProvider(apiKey: key)
-            } else {
-                FixtureMatchDataProvider(matches: [])
-            }
-
+        let provider: MatchDataProvider = liveProvider ?? FixtureMatchDataProvider(matches: [])
         let created = LiveMatchFinder(provider: provider, speech: speech)
         finder = created
 
