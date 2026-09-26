@@ -74,6 +74,50 @@ nonisolated struct SpokenDate: Sendable {
         formatted(date, format: "EEEE, d 'de' MMMM 'às' HH:mm")
     }
 
+    // MARK: - Time remaining
+
+    /// How long until a moment, as a spoken sentence: "Faltam 2 horas e 14 minutos".
+    ///
+    /// Approximate on purpose. Seconds tick on screen for whoever is watching, but a listener asking
+    /// "quanto falta?" wants an order of magnitude, and "2 horas, 14 minutos e 37 segundos" is stale
+    /// before the sentence ends. Two units at most: days and hours far out, hours and minutes
+    /// closer, minutes alone in the last hour.
+    func remainingSentence(until date: Date, from now: Date = Date()) -> String {
+        let seconds = date.timeIntervalSince(now)
+
+        guard seconds > 0 else { return "Está na hora do jogo." }
+        guard seconds >= 60 else { return "Falta menos de um minuto." }
+
+        let parts = remainingParts(seconds: seconds)
+
+        // Singular verb only when the whole remainder is a single unit of one: "Falta 1 hora".
+        let verb = parts.count == 1 && parts[0].value == 1 ? "Falta" : "Faltam"
+        let spoken = parts.map { "\($0.value) \($0.value == 1 ? $0.singular : $0.plural)" }
+
+        return "\(verb) \(spoken.joined(separator: " e "))."
+    }
+
+    private struct Part {
+        let value: Int
+        let singular: String
+        let plural: String
+    }
+
+    private func remainingParts(seconds: TimeInterval) -> [Part] {
+        let total = Int(seconds)
+        let days = total / 86_400
+        let hours = (total % 86_400) / 3_600
+        let minutes = (total % 3_600) / 60
+
+        let day = Part(value: days, singular: "dia", plural: "dias")
+        let hour = Part(value: hours, singular: "hora", plural: "horas")
+        let minute = Part(value: minutes, singular: "minuto", plural: "minutos")
+
+        let chosen = days > 0 ? [day, hour] : hours > 0 ? [hour, minute] : [minute]
+
+        return chosen.filter { $0.value > 0 }
+    }
+
     private func formatted(_ date: Date, format: String) -> String {
         let formatter = DateFormatter()
         formatter.locale = locale
