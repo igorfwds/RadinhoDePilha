@@ -88,6 +88,13 @@ nonisolated struct APIFootballTeams: Decodable, Sendable {
 nonisolated struct APIFootballTeam: Decodable, Sendable {
     let id: Int
     let name: String
+
+    /// Crest image, for example `https://media.api-sports.io/football/teams/755.png`.
+    ///
+    /// Optional because not every payload that embeds a team carries it. Fetching these images does
+    /// not count towards the daily quota, but it is rate limited per second and minute, and the
+    /// vendor asks for them to be cached rather than requested repeatedly.
+    let logo: String?
 }
 
 /// Wrapper used by the `teams` endpoint, which nests the club under a `team` key.

@@ -65,7 +65,7 @@ final class LiveMatchFinder {
 
         do {
             let live = try await provider.liveMatches(competition: .brasileiraoSerieB, season: season)
-            let ours = live.first { $0.homeTeam.id == teamID || $0.awayTeam.id == teamID }
+            let ours = Self.match(for: teamID, in: live)
 
             if let ours {
                 // Not announced here. The caller tears down the current session before starting
@@ -92,14 +92,21 @@ final class LiveMatchFinder {
 
     /// The next scheduled fixture, when the provider can supply one.
     ///
-    /// Only ``APIFootballProvider`` answers this, since it is outside ``MatchDataProvider``. With
-    /// any other provider the app simply says there is no match, which is true and sufficient.
+    /// Asks through ``MatchScheduleProvider`` rather than the vendor's concrete type, so this layer
+    /// does not know which vendor it is talking to. A provider without a schedule makes the app say
+    /// only that there is no match, which is true and sufficient.
     private func nextFixture() async throws -> Match? {
-        guard let live = provider as? APIFootballProvider,
-              let vendorID = Int(teamID)
-        else { return nil }
+        guard let schedule = provider as? MatchScheduleProvider else { return nil }
 
-        return try await live.nextFixture(forTeam: vendorID)
+        return try await schedule.nextMatch(forTeam: teamID)
+    }
+
+    /// The match the followed team is playing, among those in progress.
+    ///
+    /// Shared with ``MatchdayViewModel``, so both ways of reaching a live match agree on which one
+    /// is Náutico's.
+    static func match(for teamID: String, in live: [Match]) -> Match? {
+        live.first { $0.homeTeam.id == teamID || $0.awayTeam.id == teamID }
     }
 
     // MARK: - Wording
