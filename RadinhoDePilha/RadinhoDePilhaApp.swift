@@ -26,13 +26,18 @@ struct RadinhoDePilhaApp: App {
         APIFootballProvider(apiKey: $0)
     }
 
-    /// Fifteen seconds, the vendor's own refresh interval.
+    /// Five seconds.
     ///
-    /// Polling faster buys nothing, since the data does not change more often. Polling at the one
-    /// call per minute the vendor recommends would delay a goal by up to a minute, which is long
-    /// for someone following by ear. At fifteen seconds a match costs about 450 requests, well
-    /// inside the Pro plan's 7,500 a day, and four calls a minute is nowhere near its limit of 300.
-    private let livePollInterval = Duration.seconds(15)
+    /// The vendor refreshes its data at most every fifteen seconds, so polling faster adds no detail.
+    /// What it does is notice a change sooner: polls are not aligned with the refreshes, so the app
+    /// hears about an event on average half an interval after the vendor records it. That is 7.5
+    /// seconds at fifteen and 2.5 at five, small next to the vendor's own delay behind the pitch.
+    ///
+    /// Below five the cost grows much faster than the gain: three seconds would cost 65% more to
+    /// save one. At five a match of about 130 minutes, interval and stoppage included, costs some
+    /// 1,560 requests, which leaves room for a second device on the same match within the Pro
+    /// plan's 7,500 a day, and twelve calls a minute stays far from its limit of 300.
+    private let livePollInterval = Duration.seconds(5)
 
     /// Short because the replay compresses match time. The 60-second default in the view model
     /// follows the vendor's guidance and applies when real data arrives.

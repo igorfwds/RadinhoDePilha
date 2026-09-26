@@ -63,8 +63,11 @@ final class MatchdayViewModel {
     /// Source of the current time, injected so tests can put kick-off in the past or the future.
     private let now: @Sendable () -> Date
 
-    /// Gap between checks once kick-off time has passed. Once a minute, as the vendor recommends,
-    /// because this runs while nothing is being narrated and every request counts against the day.
+    /// Gap between checks once kick-off time has passed, until the vendor reports the match started.
+    ///
+    /// Fifteen seconds, the vendor's refresh interval. This stretch lasts a minute or two, so its
+    /// cost is a handful of requests, and checking once a minute instead would start the narration
+    /// up to 45 seconds late. The countdown before it makes no requests at all.
     private let kickoffPollInterval: Duration
 
     /// Longest single sleep while counting down, so the wake-up still lands on time if the clock
@@ -80,7 +83,7 @@ final class MatchdayViewModel {
         teamID: String = String(APIFootballMapper.nauticoTeamID),
         dates: SpokenDate = SpokenDate(),
         now: @escaping @Sendable () -> Date = { Date() },
-        kickoffPollInterval: Duration = .seconds(60),
+        kickoffPollInterval: Duration = .seconds(15),
         countdownStep: Duration = .seconds(30)
     ) {
         self.provider = provider
@@ -159,7 +162,7 @@ final class MatchdayViewModel {
         }
     }
 
-    /// Checks once a minute until the provider reports the match under way.
+    /// Checks every `kickoffPollInterval` until the provider reports the match under way.
     private func awaitKickoff(of next: Match, last: Match?) async {
         phase = .awaitingKickoff(next: next, last: last)
 
