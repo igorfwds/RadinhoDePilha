@@ -70,7 +70,9 @@ struct SportmonksMapperTests {
             ],
             scores: [],
             periods: periods,
-            events: events
+            events: events,
+            statistics: nil,
+            lineups: nil
         )
     }
 
