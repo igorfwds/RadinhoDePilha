@@ -18,6 +18,16 @@ actor AVSpeechService: SpeechService {
     private let policy: SpeechInterruptionPolicy
     private let languageCode: String
 
+    /// Plays the sound and vibration that precede a match event, when the app has them.
+    private let cues: (any EventCuePlayer)?
+
+    /// Bumped whenever the listener stops speech or asks for something else.
+    ///
+    /// Playing a cue suspends the pump for about half a second, and a stop arriving in that gap
+    /// has nothing to cut off yet. Comparing this before and after the cue is how the pump learns
+    /// that the sentence it was about to speak is no longer wanted.
+    private var generation = 0
+
     /// Created on first use rather than in `init`.
     ///
     /// The synthesiser wrapper is isolated to the main actor, and an actor's initialiser runs
@@ -49,11 +59,13 @@ actor AVSpeechService: SpeechService {
     init(
         rate: SpeechRate = .normal,
         policy: SpeechInterruptionPolicy = .above(.high),
-        languageCode: String = "pt-BR"
+        languageCode: String = "pt-BR",
+        cues: (any EventCuePlayer)? = nil
     ) {
         self.rate = rate
         self.policy = policy
         self.languageCode = languageCode
+        self.cues = cues
     }
 
     private func synthesizer() async -> SpeechSynthesizerBox {
@@ -72,7 +84,8 @@ actor AVSpeechService: SpeechService {
             PendingUtterance(
                 id: narration.id,
                 text: narration.text,
-                priority: narration.priority
+                priority: narration.priority,
+                cue: narration.cue
             )
         )
     }
@@ -83,7 +96,8 @@ actor AVSpeechService: SpeechService {
                 id: narration.id,
                 text: narration.text,
                 priority: narration.priority,
-                isOnDemand: true
+                isOnDemand: true,
+                cue: narration.cue
             )
         )
     }
@@ -105,6 +119,8 @@ actor AVSpeechService: SpeechService {
 
     /// Cuts off what is being said and speaks this instead.
     private func speakNow(_ utterance: PendingUtterance) async {
+        generation += 1
+
         // Replaces any earlier request rather than joining a queue behind it: tapping twice means
         // the first answer is no longer wanted.
         queue.removeOnDemand()
@@ -124,6 +140,7 @@ actor AVSpeechService: SpeechService {
     }
 
     func stopAll() async {
+        generation += 1
         queue.removeAll()
         currentPriority = nil
         speaking = nil
@@ -163,7 +180,12 @@ actor AVSpeechService: SpeechService {
         guard !restartRequested else { return }
 
         restartRequested = true
-        queue.prepend(speaking)
+
+        // Without its cue: the listener is hearing the same sentence again at a new setting, not
+        // a second goal.
+        var again = speaking
+        again.cue = nil
+        queue.prepend(again)
         currentPriority = nil
 
         await synthesizer().stop()
@@ -185,8 +207,8 @@ actor AVSpeechService: SpeechService {
         // would leave the listener with half a sentence and a broken timeline. Interruption is
         // reserved for what the listener asks for; see `speakNow`.
         //
-        // `policy` still describes the rule and is exercised by its own tests, because the
-        // dissertation's OE1 commits to a priority queue and the reasoning is part of the result.
+        // `policy` still describes the rule and is exercised by its own tests: the priority queue
+        // was the original design, and why it was abandoned is part of the result (ADR-002).
         startPumpIfNeeded()
     }
 
@@ -202,6 +224,14 @@ actor AVSpeechService: SpeechService {
     /// Speaks queued utterances, highest priority first, until the queue empties.
     private func pump() async {
         while let next = queue.takeNext() {
+            if let cue = next.cue, let cues {
+                let requestedAt = generation
+                await cues.play(cue)
+
+                // Stopped, or replaced by a direct request, while the cue was sounding.
+                guard requestedAt == generation else { continue }
+            }
+
             currentPriority = next.priority
             speaking = next
 

@@ -47,6 +47,11 @@ final class MatchNarrationViewModel {
     /// Consecutive failed polls, to tell a blip apart from a real outage.
     private var consecutiveFailures = 0
 
+    /// Where the listener is while stepping back through the match, or `nil` when they are not.
+    private var browseIndex: Int?
+
+    private let briefing = PreMatchBriefing()
+
     /// The polling loop, while one is running.
     ///
     /// Not cancelled from `deinit`, which is nonisolated and cannot touch main-actor state. The
@@ -311,10 +316,92 @@ final class MatchNarrationViewModel {
         await speech.speakNow(engine.summary(of: match))
     }
 
+    // MARK: - Progressive disclosure
+    //
+    // The same match, at three depths the listener chooses between: the score, the last couple of
+    // moments, the full summary. Each answers a different question, and letting the listener pick
+    // spares them a long passage when all they wanted was the score.
+
+    /// First layer: the score and the stage of the match, and nothing else.
+    func speakScore() async {
+        guard let match else { return }
+
+        await speech.speakNow(scoreLine(for: match), priority: .high)
+    }
+
+    /// Second layer: the most recent moments, newest first.
+    func speakRecentMoments() async {
+        guard let latest = narrations.last else {
+            await speech.speakNow("Ainda não houve lances nesta partida.", priority: .high)
+            return
+        }
+
+        var passage = "Último lance. \(latest.text)"
+
+        if narrations.count > 1 {
+            passage += " Antes disso. \(narrations[narrations.count - 2].text)"
+        }
+
+        await speech.speakNow(passage, priority: .high)
+    }
+
+    /// Steps one moment back through the match and speaks it.
+    func speakPreviousMoment() async {
+        guard !narrations.isEmpty else {
+            await speech.speakNow("Ainda não houve lances nesta partida.", priority: .high)
+            return
+        }
+
+        let current = min(browseIndex ?? narrations.count, narrations.count)
+
+        guard current > 0 else {
+            // Said rather than ignored: a swipe that does nothing gives no sign it was noticed.
+            await speech.speakNow("Este é o primeiro lance da partida.", priority: .high)
+            return
+        }
+
+        browseIndex = current - 1
+        await speech.speakNow(narrations[current - 1])
+    }
+
+    /// Steps one moment forward, towards the present.
+    func speakNextMoment() async {
+        guard let current = browseIndex, current + 1 < narrations.count else {
+            browseIndex = nil
+            await speech.speakNow("Este é o lance mais recente.", priority: .high)
+            return
+        }
+
+        browseIndex = current + 1
+        await speech.speakNow(narrations[current + 1])
+    }
+
+    private func scoreLine(for match: Match) -> String {
+        var line = """
+        \(match.homeTeam.shortName) \(match.score.home), \
+        \(match.awayTeam.shortName) \(match.score.away). \
+        \(match.status.spokenDescription)
+        """
+
+        if let minutes = match.elapsedMinutes, match.isLive {
+            line += ", \(minutes) minutos"
+        }
+
+        return line + "."
+    }
+
+    // MARK: - Before kick-off
+
+    /// Says who plays whom, where and when, for a match that has not started.
+    func speakPreview() async {
+        guard let match else { return }
+
+        await speech.speakNow(briefing.text(for: match), priority: .high)
+    }
+
     /// Speaks one narration again, on demand.
     ///
-    /// Does not consult ``spokenIDs``: replay exists precisely to repeat something already heard,
-    /// which is the behaviour described in the project's bookmark and replay feature.
+    /// Does not consult ``spokenIDs``: replay exists precisely to repeat something already heard.
     ///
     /// Interrupts whatever is being said. Tapping a moment and then waiting through the previous
     /// sentence, or through every sentence tapped before it, makes the list feel unresponsive,

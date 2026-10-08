@@ -69,6 +69,16 @@ final class AppSettings {
         didSet { persist(textSize.rawValue, forKey: Keys.textSize) }
     }
 
+    /// Whether a short sound announces each event before it is narrated.
+    var earconsEnabled: Bool {
+        didSet { defaults.set(earconsEnabled, forKey: Keys.earcons) }
+    }
+
+    /// Whether the phone vibrates in a pattern that identifies each event.
+    var hapticsEnabled: Bool {
+        didSet { defaults.set(hapticsEnabled, forKey: Keys.haptics) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
@@ -79,6 +89,11 @@ final class AppSettings {
         textSize = defaults.string(forKey: Keys.textSize)
             .flatMap(TextSizePreference.init(rawValue:)) ?? .system
         voiceIdentifier = defaults.string(forKey: Keys.voice)
+
+        // Both on unless switched off. `bool(forKey:)` cannot tell "off" from "never set", and
+        // defaulting to off would hide the signals from exactly the people they are for.
+        earconsEnabled = defaults.object(forKey: Keys.earcons) as? Bool ?? true
+        hapticsEnabled = defaults.object(forKey: Keys.haptics) as? Bool ?? true
     }
 
     /// The voice in use, resolved against a list of installed voices.
@@ -111,5 +126,7 @@ final class AppSettings {
         static let rate = "settings.rate"
         static let voice = "settings.voice"
         static let textSize = "settings.textSize"
+        static let earcons = "settings.earcons"
+        static let haptics = "settings.haptics"
     }
 }

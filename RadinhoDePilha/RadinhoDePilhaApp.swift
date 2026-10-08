@@ -22,7 +22,11 @@ struct RadinhoDePilhaApp: App {
     /// pace rather than sharing the main screen's clock.
     private let recordedMatch: Match?
 
-    private let speech = AVSpeechService()
+    /// Sounds and vibrations that announce each event, shared by the voice that triggers them
+    /// and by the settings screen that switches them on and off.
+    private let cues: EventCueCenter
+
+    private let speech: AVSpeechService
     private let settings = AppSettings()
 
     /// Gap between polls, which differs by provider.
@@ -42,6 +46,10 @@ struct RadinhoDePilhaApp: App {
 
         recordedMatch = recorded
         matchID = base.id
+
+        let cues = EventCueCenter()
+        self.cues = cues
+        speech = AVSpeechService(cues: cues)
 
         if let source = LiveDataSource.configured {
             // The opening match is a recording, and its identifier means nothing to a vendor
@@ -68,6 +76,7 @@ struct RadinhoDePilhaApp: App {
                     log: log
                 ),
                 speech: speech,
+                cues: cues,
                 matchID: matchID,
                 recordedMatch: recordedMatch
             )

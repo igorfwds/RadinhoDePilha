@@ -13,6 +13,9 @@ nonisolated struct PendingUtterance: Hashable, Sendable {
     /// matters most in the match; this ranks what the person just asked for. A tap has to be
     /// answered immediately even though a goal outranks it, otherwise the interface feels dead.
     var isOnDemand = false
+
+    /// Sound and vibration to play immediately before the text, if any.
+    var cue: EventCue? = nil
 }
 
 /// Utterances waiting for the synthesiser.
