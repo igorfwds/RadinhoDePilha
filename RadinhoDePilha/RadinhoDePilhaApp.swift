@@ -8,13 +8,11 @@ struct RadinhoDePilhaApp: App {
     /// different vendor, is a change here and nowhere else. The screens, the narration engine and
     /// their tests never learn which provider won.
     ///
-    /// With a vendor credential configured, the narration screen follows real data, so that a
-    /// live match found from the testing screen can actually be loaded and polled. The screen
-    /// opens on Náutico 4×3 Tombense, a real Série B match, until the lookup replaces it. Which
-    /// vendor that is, Sportmonks or API-Football, is ``LiveDataSource/configured``'s decision.
-    ///
-    /// Without a credential it replays that same match, decoded from a recorded response, as if it
-    /// were happening now, which keeps the app demonstrable offline.
+    /// The narration tab opens on Náutico 3×3 Operário, a real Série B match decoded from a recorded
+    /// Sportmonks response and replayed as if it were happening now. With a vendor credential
+    /// configured, live data takes over: the tab opens on the matchday screen instead, and a match
+    /// in progress replaces the replay; see `RootView.follow(liveMatch:)`. Which vendor that is,
+    /// Sportmonks or API-Football, is ``LiveDataSource/configured``'s decision.
     private let provider: MatchDataProvider
     private let matchID: String
 
@@ -29,19 +27,17 @@ struct RadinhoDePilhaApp: App {
     private let speech: AVSpeechService
     private let settings = AppSettings()
 
-    /// Gap between polls, which differs by provider.
-    ///
-    /// Short for the replay, which compresses match time. For a live vendor it is whatever that
-    /// vendor's quota allows, which ``LiveDataSource`` knows.
-    private let pollInterval: Duration
+    /// Live data, available once a vendor credential is configured.
+    private let live = LiveDataSource.configured
 
-    /// Where live narration is written down, when the configured vendor is being recorded.
-    private let log: MatchTimelineLog?
+    /// Short because the replay compresses match time. A live match is polled at the pace its
+    /// vendor allows, which ``LiveDataSource`` knows.
+    private let pollInterval = Duration.seconds(2)
 
     init() {
         // Falling back keeps the app demonstrable even if the recording fails to load: silence
         // would be indistinguishable from a crash for the audience this is built for.
-        let recorded = try? RecordedMatches.match(named: RecordedMatches.nauticoTombense)
+        let recorded = try? RecordedMatches.sportmonksMatch(named: RecordedMatches.nauticoOperario)
         let base = recorded ?? SampleMatches.liveComeback
 
         recordedMatch = recorded
@@ -51,17 +47,7 @@ struct RadinhoDePilhaApp: App {
         self.cues = cues
         speech = AVSpeechService(cues: cues)
 
-        if let source = LiveDataSource.configured {
-            // The opening match is a recording, and its identifier means nothing to a vendor
-            // other than the one it was recorded from, so it is answered locally.
-            provider = RecordedFirstProvider(recorded: [base], live: source.provider)
-            pollInterval = source.pollInterval
-            log = source.log
-        } else {
-            provider = SimulatedLiveMatchProvider(base: base, startMinute: 60)
-            pollInterval = .seconds(2)
-            log = nil
-        }
+        provider = SimulatedLiveMatchProvider(base: base, startMinute: 60)
     }
 
     var body: some Scene {
@@ -72,13 +58,13 @@ struct RadinhoDePilhaApp: App {
                     provider: provider,
                     engine: TemplateNarrationEngine(persona: settings.persona),
                     speech: speech,
-                    pollInterval: pollInterval,
-                    log: log
+                    pollInterval: pollInterval
                 ),
                 speech: speech,
                 cues: cues,
                 matchID: matchID,
-                recordedMatch: recordedMatch
+                recordedMatch: recordedMatch,
+                live: live
             )
         }
     }

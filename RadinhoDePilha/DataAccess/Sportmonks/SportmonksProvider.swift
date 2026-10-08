@@ -32,9 +32,12 @@ nonisolated struct SportmonksProvider: MatchDataProvider {
 
     /// Gap between polls that suits this vendor.
     ///
-    /// Ten seconds is 360 requests an hour, comfortably inside a paid plan and twice what the free
-    /// plan allows, which does not matter in practice: the free plan cannot see Série B at all.
-    static let pollInterval = Duration.seconds(10)
+    /// Three and a half seconds is about 1,030 requests an hour. The recorder adds its own on
+    /// every third poll, about 340 more, so a match costs some 1,370 of the 2,000 an hour the
+    /// Starter plan allows per entity. That leaves room for the recording script running on a Mac
+    /// with the same token, about 120 an hour, but not for a second phone narrating the same match.
+    /// The free plan allows 180, which does not matter in practice: it cannot see Série B at all.
+    static let pollInterval = Duration.milliseconds(3500)
 
     init(
         token: String,
@@ -97,34 +100,27 @@ nonisolated struct SportmonksProvider: MatchDataProvider {
 
     // MARK: - Scheduling
 
-    /// The next fixture of the followed club that has not kicked off yet.
+    /// A team's fixtures between two days, in every competition the subscription reaches.
     ///
-    /// Asks for the competition's schedule and picks the club out of it, rather than asking for
-    /// the club's own schedule, so that no vendor team identifier has to be known in advance.
-    /// Three weeks of one league fits in a single page of fifty.
-    func nextFixture(
-        where isFollowed: @Sendable (Team) -> Bool,
-        from now: Date = Date()
-    ) async throws -> Match? {
-        let end = now.addingTimeInterval(21 * 24 * 60 * 60)
-
+    /// Asked of the team rather than of the league, so a state championship or cup match shows up
+    /// as the last or next one when that is what it is.
+    private func fixtures(ofTeam teamID: Int, from start: Date, to end: Date) async throws -> [Match] {
         let fixtures: [SportmonksFixture]? = try await get(
-            path: "fixtures/between/\(Self.day(now))/\(Self.day(end))",
+            path: "fixtures/between/\(Self.day(start))/\(Self.day(end))/\(teamID)",
             query: [
-                URLQueryItem(name: "include", value: "participants"),
-                URLQueryItem(name: "filters", value: "fixtureLeagues:\(leagueID)"),
+                URLQueryItem(name: "include", value: "participants;scores"),
                 URLQueryItem(name: "per_page", value: "50"),
                 URLQueryItem(name: "sortBy", value: "starting_at"),
                 URLQueryItem(name: "order", value: "asc")
             ]
         )
 
-        return (fixtures ?? [])
-            .map(SportmonksMapper.match(from:))
-            .filter { $0.status == .scheduled && $0.kickoff > now }
-            .filter { isFollowed($0.homeTeam) || isFollowed($0.awayTeam) }
-            .min { $0.kickoff < $1.kickoff }
+        return (fixtures ?? []).map(SportmonksMapper.match(from:))
     }
+
+    /// How far back and ahead the schedule looks. A club plays at least weekly in season, so six
+    /// weeks covers any break short of the gap between seasons.
+    private static let scheduleWindow: TimeInterval = 45 * 24 * 60 * 60
 
     /// A date in the `yyyy-MM-dd` form the vendor's range endpoints take, in UTC.
     private static func day(_ date: Date) -> String {
@@ -191,5 +187,36 @@ nonisolated struct SportmonksProvider: MatchDataProvider {
         default:
             throw MatchDataError.providerFailure(status: http.statusCode)
         }
+    }
+}
+
+// MARK: - MatchScheduleProvider
+
+nonisolated extension SportmonksProvider: MatchScheduleProvider {
+    /// A domain identifier that is not one of this vendor's numbers cannot name a team here, and is
+    /// answered with nothing rather than with an error, as ``APIFootballProvider`` does.
+    func lastMatch(forTeam teamID: String) async throws -> Match? {
+        guard let vendorID = Int(teamID) else { return nil }
+
+        let now = Date()
+
+        return try await fixtures(ofTeam: vendorID, from: now.addingTimeInterval(-Self.scheduleWindow), to: now)
+            .filter { $0.status == .finished }
+            .max { $0.kickoff < $1.kickoff }
+    }
+
+    /// The earliest fixture not yet started.
+    ///
+    /// Chosen by status and not by the clock: at kick-off time the vendor still reports the match
+    /// as not started for a minute or two, and it has to remain the next match throughout, since
+    /// that is the stretch in which the app is waiting for it to begin.
+    func nextMatch(forTeam teamID: String) async throws -> Match? {
+        guard let vendorID = Int(teamID) else { return nil }
+
+        let now = Date()
+
+        return try await fixtures(ofTeam: vendorID, from: now, to: now.addingTimeInterval(Self.scheduleWindow))
+            .filter { $0.status == .scheduled }
+            .min { $0.kickoff < $1.kickoff }
     }
 }

@@ -33,36 +33,24 @@ final class LiveMatchFinder {
     private let speech: any SpeechService
     private let dates = SpokenDate()
 
-    /// Recognises the team being followed.
+    /// Team being followed, as the **domain** identifies it.
     ///
-    /// A question put to the vendor's side rather than an identifier held here: this type belongs
-    /// to the presentation layer and has no business knowing how any vendor numbers its clubs, or
-    /// whether it recognises them by number at all.
-    private let follows: @Sendable (Team) -> Bool
+    /// A string rather than the vendor's integer: this type belongs to the presentation layer and
+    /// has no business knowing how API-Football numbers its clubs. The conversion happens once, at
+    /// the default value.
+    private let teamID: String
 
-    /// Looks up the followed team's next fixture, when the provider can supply one.
-    private let nextFixtureLookup: (@Sendable () async throws -> Match?)?
-
-    /// Follows the club through a configured live vendor.
-    init(source: LiveDataSource, speech: any SpeechService) {
-        self.provider = source.provider
-        self.speech = speech
-        self.follows = source.follows
-        self.nextFixtureLookup = source.nextFixture
-    }
-
-    /// Follows a team by its domain identifier, against any provider.
-    ///
-    /// Without a next-fixture lookup, since that is outside ``MatchDataProvider``: the app simply
-    /// says there is no match, which is true and sufficient.
-    init(provider: MatchDataProvider, speech: any SpeechService, teamID: String) {
+    init(
+        provider: MatchDataProvider,
+        speech: any SpeechService,
+        teamID: String = String(APIFootballMapper.nauticoTeamID)
+    ) {
         self.provider = provider
         self.speech = speech
-        self.follows = { $0.id == teamID }
-        self.nextFixtureLookup = nil
+        self.teamID = teamID
     }
 
-    /// Whether a live provider is configured at all.
+    /// Whether the live provider is configured at all.
     ///
     /// Without a credential the control cannot work, and saying so is better than letting someone
     /// press a button that silently does nothing.
@@ -77,13 +65,16 @@ final class LiveMatchFinder {
 
         do {
             let live = try await provider.liveMatches(competition: .brasileiraoSerieB, season: season)
-            let ours = live.first { follows($0.homeTeam) || follows($0.awayTeam) }
+            let ours = Self.match(for: teamID, in: live)
 
             if let ours {
+                // Not announced here. The caller tears down the current session before starting
+                // the live one, which clears the speech queue, so anything said now would be cut
+                // off mid-sentence. The narration's own opening names the teams instead, and that
+                // is the confirmation the listener hears.
                 outcome = .live(ours)
-                await speech.speakNow(liveAnnouncement(for: ours), priority: .high)
             } else {
-                let next = try? await nextFixtureLookup?()
+                let next = try? await nextFixture()
                 outcome = .idle(next: next)
                 await speech.speakNow(idleAnnouncement(next: next), priority: .high)
             }
@@ -99,14 +90,28 @@ final class LiveMatchFinder {
         isSearching = false
     }
 
-    // MARK: - Wording
+    /// The next scheduled fixture, when the provider can supply one.
+    ///
+    /// Asks through ``MatchScheduleProvider`` rather than the vendor's concrete type, so this layer
+    /// does not know which vendor it is talking to. A provider without a schedule makes the app say
+    /// only that there is no match, which is true and sufficient.
+    private func nextFixture() async throws -> Match? {
+        guard let schedule = provider as? MatchScheduleProvider else { return nil }
 
-    private func liveAnnouncement(for match: Match) -> String {
-        """
-        Partida em andamento: \(match.homeTeam.shortName) e \(match.awayTeam.shortName). \
-        Começando a narração.
-        """
+        return try await schedule.nextMatch(forTeam: teamID)
     }
+
+    /// The match the followed team is playing, among those in progress.
+    ///
+    /// Shared with ``MatchdayViewModel``, so both ways of reaching a live match agree on which one
+    /// is Náutico's. Checks the status as well as the team: the vendor's live list holds only matches
+    /// in progress, but nothing in the contract promises that, and a scheduled match mistaken for a
+    /// live one would start a narration with nothing to narrate.
+    static func match(for teamID: String, in live: [Match]) -> Match? {
+        live.first { $0.isLive && ($0.homeTeam.id == teamID || $0.awayTeam.id == teamID) }
+    }
+
+    // MARK: - Wording
 
     /// Says there is no match, and when the next one is.
     ///
@@ -139,6 +144,6 @@ final class LiveMatchFinder {
     }
 
     private func opponentName(in match: Match) -> String {
-        follows(match.homeTeam) ? match.awayTeam.shortName : match.homeTeam.shortName
+        match.homeTeam.id == teamID ? match.awayTeam.shortName : match.homeTeam.shortName
     }
 }

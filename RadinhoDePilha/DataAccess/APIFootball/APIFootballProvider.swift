@@ -38,21 +38,24 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
     // MARK: - MatchDataProvider
 
     func liveMatches(competition: Competition, season: Int) async throws -> [Match] {
-        // `live` accepts only `all` or a dash-separated list of two or more league identifiers:
-        // a lone `72` is rejected with a validation error inside a 200 response, which surfaced
-        // on match day. `all` narrowed by `league` is the accepted spelling of "this league only".
-        // No season either: a match in progress belongs to whatever season is current.
+        // Asks for every live fixture and filters locally, rather than passing the league.
+        //
+        // The documentation shows `live=39-61-48`, but a single identifier is rejected: `live=72`
+        // comes back with "The Live field does not match the regular expression: [id-id-id...] or
+        // string: all". Two or more identifiers pass, one does not. Found against the live API an
+        // hour before the first real match the app was meant to follow, and absent from the docs.
+        //
+        // `all` costs the same single request, and filtering here does not depend on that quirk
+        // staying the way it is. Season is not sent either way: a match in progress belongs to
+        // whatever season is current.
         let items: [APIFootballFixtureItem] = try await get(
             path: "fixtures",
-            query: [
-                URLQueryItem(name: "live", value: "all"),
-                URLQueryItem(name: "league", value: String(leagueID))
-            ]
+            query: [URLQueryItem(name: "live", value: "all")]
         )
 
-        return items.map { item in
-            APIFootballMapper.match(from: item, events: item.events ?? [])
-        }
+        return items
+            .filter { $0.league.id == leagueID }
+            .map { APIFootballMapper.match(from: $0, events: $0.events ?? []) }
     }
 
     func match(withID id: String) async throws -> Match {
@@ -81,6 +84,19 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
             query: [
                 URLQueryItem(name: "team", value: String(teamID)),
                 URLQueryItem(name: "next", value: "1")
+            ]
+        )
+
+        return items.first.map { APIFootballMapper.match(from: $0) }
+    }
+
+    /// The last fixture a team played.
+    func lastFixture(forTeam teamID: Int) async throws -> Match? {
+        let items: [APIFootballFixtureItem] = try await get(
+            path: "fixtures",
+            query: [
+                URLQueryItem(name: "team", value: String(teamID)),
+                URLQueryItem(name: "last", value: "1")
             ]
         )
 
@@ -156,28 +172,60 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
     }
 
     private func check(_ errors: APIFootballErrors) throws {
-        guard !errors.isEmpty else { return }
+        if let error = Self.domainError(for: errors) {
+            throw error
+        }
+    }
 
-        if errors.planRestriction != nil {
-            // Asking the free plan for a season it does not cover lands here. It is not a quota
-            // problem and not a missing match: the data exists, the subscription does not reach
-            // it, and saying so plainly is what lets the interface explain itself.
-            throw MatchDataError.unauthorized
+    /// Translates the errors the vendor reports inside an HTTP 200 into domain errors.
+    ///
+    /// Keys are matched rather than messages, because the messages are prose and change. Four are
+    /// known from the live API:
+    ///
+    /// - `plan`: the subscription does not reach the requested season
+    /// - `token`: the key is missing or invalid ("Error/Missing application key")
+    /// - `requests`: the daily quota is used up
+    /// - `rateLimit`: too many requests within a minute
+    ///
+    /// `token` and `rateLimit` used to fall through to a generic provider failure, which the
+    /// listener heard as "o serviço de dados está indisponível". Both have a cause the listener can
+    /// act on or wait out, and naming it is the point of distinguishing them.
+    ///
+    /// Anything else stays a provider failure: an unknown key is not evidence of either cause.
+    static func domainError(for errors: APIFootballErrors) -> MatchDataError? {
+        guard !errors.isEmpty else { return nil }
+
+        let keys = Set(errors.messages.keys.map { $0.lowercased() })
+
+        if keys.contains("plan") || keys.contains("token") {
+            // Neither is a quota problem nor a missing match. With `plan` the data exists but the
+            // subscription does not reach it; with `token` the request was not identified at all.
+            // Both come down to access being refused.
+            return .unauthorized
         }
 
-        // A missing or invalid key also arrives with HTTP 200, under `token`. Reading it as a
-        // provider outage would tell the listener the service is down when the fix is local.
-        if errors.messages["token"] != nil {
-            throw MatchDataError.unauthorized
+        if keys.contains("requests") || keys.contains("ratelimit") {
+            // Per-day and per-minute limits read the same to the listener: the app has asked too
+            // much, and waiting is the remedy.
+            return .quotaExceeded
         }
 
-        // `requests` is the daily allowance, `rateLimit` the per-minute one.
-        if errors.messages.keys.contains(where: {
-            $0.localizedCaseInsensitiveContains("requests") || $0 == "rateLimit"
-        }) {
-            throw MatchDataError.quotaExceeded
-        }
+        return .providerFailure(status: 200)
+    }
+}
 
-        throw MatchDataError.providerFailure(status: 200)
+// MARK: - Schedule
+
+nonisolated extension APIFootballProvider: MatchScheduleProvider {
+    /// A domain identifier that is not one of this vendor's numbers cannot name a team here, and is
+    /// answered with nothing rather than with an error: there is simply no such team to look up.
+    func lastMatch(forTeam teamID: String) async throws -> Match? {
+        guard let vendorID = Int(teamID) else { return nil }
+        return try await lastFixture(forTeam: vendorID)
+    }
+
+    func nextMatch(forTeam teamID: String) async throws -> Match? {
+        guard let vendorID = Int(teamID) else { return nil }
+        return try await nextFixture(forTeam: vendorID)
     }
 }

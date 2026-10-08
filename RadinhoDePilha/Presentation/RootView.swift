@@ -19,11 +19,23 @@ struct RootView: View {
     /// Match currently on the narration screen.
     @State private var followedMatchID: String
 
+    /// What the narration tab shows before any match is followed, when live data is available.
+    ///
+    /// `nil` without a credential, in which case the tab keeps opening on the recorded replay, as
+    /// it always has.
+    @State private var matchday: MatchdayViewModel?
+
+    /// Whether the narration tab is showing the matchday screen rather than a narration.
+    @State private var showsMatchday: Bool
+
     @State private var selectedTab = Tab.narration
 
     private let speech: any SpeechService
     private let cues: EventCueCenter
     private let recordedMatch: Match?
+
+    /// Live vendor, or `nil` without a credential.
+    private let live: LiveDataSource?
 
     private enum Tab: Hashable {
         case narration
@@ -37,7 +49,8 @@ struct RootView: View {
         speech: any SpeechService,
         cues: EventCueCenter,
         matchID: String,
-        recordedMatch: Match?
+        recordedMatch: Match?,
+        live: LiveDataSource?
     ) {
         self.settings = settings
         self.viewModel = viewModel
@@ -45,6 +58,18 @@ struct RootView: View {
         self.cues = cues
         self.followedMatchID = matchID
         self.recordedMatch = recordedMatch
+        self.live = live
+
+        let matchday = live.map {
+            MatchdayViewModel(
+                provider: $0.provider,
+                schedule: $0.schedule,
+                speech: speech,
+                teamID: $0.teamID
+            )
+        }
+        self._matchday = State(initialValue: matchday)
+        self._showsMatchday = State(initialValue: matchday != nil)
     }
 
     var body: some View {
@@ -54,11 +79,19 @@ struct RootView: View {
                 systemImage: "dot.radiowaves.left.and.right",
                 value: Tab.narration
             ) {
-                MatchNarrationView(
-                    viewModel: viewModel,
-                    settings: settings,
-                    matchID: followedMatchID
-                )
+                if showsMatchday, let matchday {
+                    MatchdayView(model: matchday)
+                } else {
+                    MatchNarrationView(
+                        viewModel: viewModel,
+                        settings: settings,
+                        matchID: followedMatchID
+                    )
+                    // A new identity per match. The screen keeps its view model in `@State`, which
+                    // SwiftUI preserves across updates, so without this the old session would stay
+                    // on screen after a live match replaced it.
+                    .id(followedMatchID)
+                }
             }
 
             SwiftUI.Tab("Modos", systemImage: "slider.horizontal.3", value: Tab.modes) {
@@ -66,7 +99,8 @@ struct RootView: View {
                     recordedMatch: recordedMatch,
                     settings: settings,
                     speech: speech,
-                    onFollowLiveMatch: follow(liveMatch:)
+                    live: live,
+                    onFollowLiveMatch: { follow(liveMatch: $0, startsNarrating: true) }
                 )
             }
 
@@ -79,7 +113,20 @@ struct RootView: View {
         // overridden with a value that would silently replace their own setting.
         .modifier(TextSizeOverride(size: settings.textSize.dynamicTypeSize))
         // Held only while narrating, and released when the app leaves the foreground.
-        .keepsScreenAwake(viewModel.isNarrating)
+        // Also held while waiting for the kick-off whistle, which lasts minutes rather than hours:
+        // if the phone locked itself then, the app would be suspended and miss the start it was
+        // told to announce. The long countdown before it does not hold the screen, to spare the
+        // battery.
+        .keepsScreenAwake(viewModel.isNarrating || isAwaitingKickoff)
+        .onChange(of: matchday?.phase) {
+            guard showsMatchday, case .live(let match, let introduction)? = matchday?.phase else {
+                return
+            }
+
+            // Starting by itself only when the matchday screen asked for it, which it does at
+            // kick-off and not when the app merely opens during a match.
+            follow(liveMatch: match, startsNarrating: introduction != nil, introduction: introduction)
+        }
         .task {
             // Configures the audio session before the first utterance, so the first goal is not
             // the one that pays for the setup.
@@ -108,9 +155,46 @@ struct RootView: View {
     /// Moving to the tab is part of the answer, not decoration: the listener asked to hear a match,
     /// and starting audio while leaving them on another screen would be disorienting for someone
     /// navigating by screen reader.
-    private func follow(liveMatch match: Match) {
-        followedMatchID = match.id
-        selectedTab = .narration
+    ///
+    /// The session is replaced, not redirected. The screen used to receive only the new match
+    /// identifier while its view model still pointed at the recorded replay, so it looked the live
+    /// match up in a 2022 recording, failed, and showed an error at the one moment it mattered.
+    /// It also polled every two seconds, a pace chosen for compressed replay time.
+    private func follow(
+        liveMatch match: Match,
+        startsNarrating: Bool,
+        introduction: String? = nil
+    ) {
+        guard let live else { return }
+
+        matchday?.stop()
+
+        Task {
+            // Stops the replay and empties the queue, so nothing from 2022 is spoken over the
+            // live match.
+            await viewModel.stopNarrating()
+
+            let session = MatchNarrationViewModel(
+                provider: live.provider,
+                engine: TemplateNarrationEngine(persona: settings.persona),
+                speech: speech,
+                pollInterval: live.pollInterval,
+                log: live.log
+            )
+            if startsNarrating {
+                session.startAfterLoading(introduction: introduction)
+            }
+
+            viewModel = session
+            followedMatchID = match.id
+            showsMatchday = false
+            selectedTab = .narration
+        }
+    }
+
+    private var isAwaitingKickoff: Bool {
+        guard showsMatchday, case .awaitingKickoff? = matchday?.phase else { return false }
+        return true
     }
 
     /// Pushes stored preferences into the services on launch.

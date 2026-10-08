@@ -50,6 +50,9 @@ nonisolated struct SportmonksFixture: Decodable, Sendable {
 nonisolated struct SportmonksParticipant: Decodable, Sendable {
     let id: Int
     let name: String
+
+    /// Crest, hosted by the vendor.
+    let imagePath: String?
     let meta: Meta?
 
     nonisolated struct Meta: Decodable, Sendable {
@@ -114,4 +117,8 @@ nonisolated struct SportmonksEvent: Decodable, Sendable {
 
     /// Set when a card was later withdrawn. `false` on cards, null on everything else.
     let rescinded: Bool?
+
+    /// Present when the event is about a coach rather than a player: a booking or a sending-off
+    /// on the bench, with the coach's name in `playerName`.
+    let coachId: Int?
 }

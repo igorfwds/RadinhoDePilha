@@ -25,6 +25,43 @@ nonisolated enum RecordedMatches {
     /// Náutico win over Sport in the seasons the free plan reaches.
     static let nauticoSport = "fixture-1147708"
 
+    /// Náutico 3×3 Operário, round 28 of Série B 2026, recorded from Sportmonks.
+    ///
+    /// The match the app opens on and the one the simulation replays. Six goals, one of them from
+    /// the penalty spot and two after the ninetieth minute, five bookings, ten substitutions and
+    /// stoppage time in both halves, from the vendor and the season under evaluation.
+    static let nauticoOperario = "sportmonks-fixture-19667160"
+
+    /// Decodes a fixture recorded from Sportmonks into the domain.
+    ///
+    /// The counterpart of ``match(named:in:)`` for the second vendor: the two record different
+    /// wire formats, and each recording is read by the adapter of the vendor it came from.
+    ///
+    /// - Throws: ``MatchDataError/decoding(underlying:)`` when the resource is missing or malformed.
+    static func sportmonksMatch(named name: String, in bundle: Bundle = .main) throws -> Match {
+        guard let url = bundle.url(forResource: name, withExtension: "json") else {
+            throw MatchDataError.decoding(underlying: "Recurso \(name).json não encontrado")
+        }
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+
+        do {
+            let data = try Data(contentsOf: url)
+            let fixture = try decoder.decode(SportmonksResponse<SportmonksFixture>.self, from: data).data
+
+            guard let fixture else {
+                throw MatchDataError.decoding(underlying: "\(name).json não contém partida")
+            }
+
+            return SportmonksMapper.match(from: fixture)
+        } catch let error as MatchDataError {
+            throw error
+        } catch {
+            throw MatchDataError.decoding(underlying: String(describing: error))
+        }
+    }
+
     /// Decodes a recorded fixture into the domain.
     ///
     /// - Throws: ``MatchDataError/decoding(underlying:)`` when the resource is missing or

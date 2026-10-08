@@ -71,7 +71,11 @@ nonisolated enum SportmonksMapper {
             return Team(id: "0", name: "A definir", shortName: "A definir", nickname: nil, crestURL: nil)
         }
 
-        return ClubDirectory.team(id: participant.id, vendorName: participant.name)
+        return ClubDirectory.team(
+            id: participant.id,
+            vendorName: participant.name,
+            logo: participant.imagePath
+        )
     }
 
     /// Season year, taken from the kick-off.
@@ -152,6 +156,11 @@ nonisolated enum SportmonksMapper {
         // A withdrawn card did not happen as far as the listener is concerned.
         guard dto.rescinded != true else { return nil }
 
+        // A card shown to a coach is left out. The domain has no way to say it was not a player,
+        // and the narration of a red card tells the listener the side is down to ten, which a
+        // sending-off on the bench does not cause.
+        guard dto.coachId == nil else { return nil }
+
         guard let participantID = dto.participantId,
               let team = match.team(withID: String(participantID)),
               let minute = dto.minute
@@ -208,15 +217,6 @@ nonisolated enum SportmonksMapper {
     /// Sportmonks' identifier for the competition this app follows.
     static let serieBLeagueID = 651
 
-    // MARK: - Followed club
-
-    /// Whether a team is Náutico.
-    ///
-    /// By name rather than by identifier, unlike the API-Football side. The vendor's number for
-    /// the club can only be read with a subscription that reaches Série B, and matching on the
-    /// folded name works from the first request of that subscription with nothing to look up.
-    static func isNautico(_ team: Team) -> Bool {
-        ClubDirectory.normalised(team.name).contains("nautico")
-            || ClubDirectory.normalised(team.shortName).contains("nautico")
-    }
+    /// Sportmonks' identifier for Clube Náutico Capibaribe, read from Série B fixtures.
+    static let nauticoTeamID = 12157
 }

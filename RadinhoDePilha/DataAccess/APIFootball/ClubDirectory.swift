@@ -43,7 +43,10 @@ nonisolated enum ClubDirectory {
     ///
     /// The fallback matters: the table covers the national divisions, and a cup opponent from a
     /// state league must still be narrated. A slightly misspelt name beats silence.
-    static func team(id: Int, vendorName: String) -> Team {
+    ///
+    /// The crest comes from the vendor rather than from this table: it is an image the vendor hosts
+    /// and may move, not a fact about the club worth curating here.
+    static func team(id: Int, vendorName: String, logo: String? = nil) -> Team {
         let entry = clubs[normalised(vendorName)]
 
         return Team(
@@ -51,7 +54,7 @@ nonisolated enum ClubDirectory {
             name: entry?.name ?? vendorName,
             shortName: entry?.shortName ?? vendorName,
             nickname: entry?.nickname,
-            crestURL: nil
+            crestURL: logo.flatMap(URL.init(string:))
         )
     }
 
