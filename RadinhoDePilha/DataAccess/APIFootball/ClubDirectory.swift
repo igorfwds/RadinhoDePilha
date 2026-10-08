@@ -63,6 +63,8 @@ nonisolated enum ClubDirectory {
     private static let clubs: [String: Entry] = [
         // MARK: The case study
         "nautico recife": Entry("Náutico", full: "Clube Náutico Capibaribe", nickname: "Timbu"),
+        // The plain spelling, for vendors that do not append the city.
+        "nautico": Entry("Náutico", full: "Clube Náutico Capibaribe", nickname: "Timbu"),
 
         // MARK: Série A
         "atletico-mg": Entry("Atlético Mineiro", full: "Clube Atlético Mineiro"),

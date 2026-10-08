@@ -38,11 +38,16 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
     // MARK: - MatchDataProvider
 
     func liveMatches(competition: Competition, season: Int) async throws -> [Match] {
-        // `live` takes league identifiers, not a season: a match in progress belongs to whatever
-        // season is current, and asking for both is rejected.
+        // `live` accepts only `all` or a dash-separated list of two or more league identifiers:
+        // a lone `72` is rejected with a validation error inside a 200 response, which surfaced
+        // on match day. `all` narrowed by `league` is the accepted spelling of "this league only".
+        // No season either: a match in progress belongs to whatever season is current.
         let items: [APIFootballFixtureItem] = try await get(
             path: "fixtures",
-            query: [URLQueryItem(name: "live", value: String(leagueID))]
+            query: [
+                URLQueryItem(name: "live", value: "all"),
+                URLQueryItem(name: "league", value: String(leagueID))
+            ]
         )
 
         return items.map { item in
@@ -160,7 +165,16 @@ nonisolated struct APIFootballProvider: MatchDataProvider {
             throw MatchDataError.unauthorized
         }
 
-        if errors.messages.keys.contains(where: { $0.localizedCaseInsensitiveContains("requests") }) {
+        // A missing or invalid key also arrives with HTTP 200, under `token`. Reading it as a
+        // provider outage would tell the listener the service is down when the fix is local.
+        if errors.messages["token"] != nil {
+            throw MatchDataError.unauthorized
+        }
+
+        // `requests` is the daily allowance, `rateLimit` the per-minute one.
+        if errors.messages.keys.contains(where: {
+            $0.localizedCaseInsensitiveContains("requests") || $0 == "rateLimit"
+        }) {
             throw MatchDataError.quotaExceeded
         }
 

@@ -2,9 +2,9 @@ import Foundation
 
 /// Access to build-time configuration values injected through xcconfig files.
 ///
-/// The API key lives in `Config/Secrets.xcconfig`, which is not under version control. The
-/// xcconfig promotes it to a build setting, `Config/Info.plist` expands it into the generated
-/// property list, and this type reads it from the bundle at runtime. The key therefore never
+/// The credentials live in `Config/Secrets.xcconfig`, which is not under version control. The
+/// xcconfig promotes each to a build setting, `Config/Info.plist` expands it into the generated
+/// property list, and this type reads it from the bundle at runtime. A credential therefore never
 /// appears in source, in git history, or on screen while presenting the code.
 nonisolated enum AppConfiguration {
     /// Info.plist key holding the API-Football credential.
@@ -26,6 +26,19 @@ nonisolated enum AppConfiguration {
     /// without every call site repeating the check.
     static var hasAPIFootballKey: Bool {
         apiFootballKey != nil
+    }
+
+    /// Info.plist key holding the Sportmonks credential.
+    static let sportmonksTokenName = "SportmonksToken"
+
+    /// Credential for Sportmonks, or `nil` when it has not been provided.
+    ///
+    /// Travels the same route as the API-Football key, from `SPORTMONKS_TOKEN` in
+    /// `Config/Secrets.xcconfig` through `Config/Info.plist`.
+    static var sportmonksToken: String? {
+        sanitizedKey(
+            from: Bundle.main.object(forInfoDictionaryKey: sportmonksTokenName) as? String
+        )
     }
 
     /// Normalises a raw configuration value into a usable credential, or `nil`.

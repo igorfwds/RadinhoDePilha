@@ -8,10 +8,13 @@ struct RadinhoDePilhaApp: App {
     /// different vendor, is a change here and nowhere else. The screens, the narration engine and
     /// their tests never learn which provider won.
     ///
-    /// Today it replays Náutico 4×3 Tombense, a real Série B match, decoded from a recorded
-    /// API-Football response, as if it were happening now. Live data waits on a paid plan: the
-    /// free tier only reaches seasons 2022 to 2024, so the current season cannot be requested at
-    /// all, and its hundred daily requests would not survive one polled match regardless.
+    /// With a vendor credential configured, the narration screen follows real data, so that a
+    /// live match found from the testing screen can actually be loaded and polled. The screen
+    /// opens on Náutico 4×3 Tombense, a real Série B match, until the lookup replaces it. Which
+    /// vendor that is, Sportmonks or API-Football, is ``LiveDataSource/configured``'s decision.
+    ///
+    /// Without a credential it replays that same match, decoded from a recorded response, as if it
+    /// were happening now, which keeps the app demonstrable offline.
     private let provider: MatchDataProvider
     private let matchID: String
 
@@ -22,9 +25,14 @@ struct RadinhoDePilhaApp: App {
     private let speech = AVSpeechService()
     private let settings = AppSettings()
 
-    /// Short because the replay compresses match time. The 60-second default in the view model
-    /// follows the vendor's guidance and applies when real data arrives.
-    private let pollInterval = Duration.seconds(2)
+    /// Gap between polls, which differs by provider.
+    ///
+    /// Short for the replay, which compresses match time. For a live vendor it is whatever that
+    /// vendor's quota allows, which ``LiveDataSource`` knows.
+    private let pollInterval: Duration
+
+    /// Where live narration is written down, when the configured vendor is being recorded.
+    private let log: MatchTimelineLog?
 
     init() {
         // Falling back keeps the app demonstrable even if the recording fails to load: silence
@@ -33,8 +41,19 @@ struct RadinhoDePilhaApp: App {
         let base = recorded ?? SampleMatches.liveComeback
 
         recordedMatch = recorded
-        provider = SimulatedLiveMatchProvider(base: base, startMinute: 60)
         matchID = base.id
+
+        if let source = LiveDataSource.configured {
+            // The opening match is a recording, and its identifier means nothing to a vendor
+            // other than the one it was recorded from, so it is answered locally.
+            provider = RecordedFirstProvider(recorded: [base], live: source.provider)
+            pollInterval = source.pollInterval
+            log = source.log
+        } else {
+            provider = SimulatedLiveMatchProvider(base: base, startMinute: 60)
+            pollInterval = .seconds(2)
+            log = nil
+        }
     }
 
     var body: some Scene {
@@ -45,7 +64,8 @@ struct RadinhoDePilhaApp: App {
                     provider: provider,
                     engine: TemplateNarrationEngine(persona: settings.persona),
                     speech: speech,
-                    pollInterval: pollInterval
+                    pollInterval: pollInterval,
+                    log: log
                 ),
                 speech: speech,
                 matchID: matchID,

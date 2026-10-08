@@ -33,28 +33,40 @@ final class LiveMatchFinder {
     private let speech: any SpeechService
     private let dates = SpokenDate()
 
-    /// Team being followed, as the **domain** identifies it.
+    /// Recognises the team being followed.
     ///
-    /// A string rather than the vendor's integer: this type belongs to the presentation layer and
-    /// has no business knowing how API-Football numbers its clubs. The conversion happens once, at
-    /// the default value.
-    private let teamID: String
+    /// A question put to the vendor's side rather than an identifier held here: this type belongs
+    /// to the presentation layer and has no business knowing how any vendor numbers its clubs, or
+    /// whether it recognises them by number at all.
+    private let follows: @Sendable (Team) -> Bool
 
-    init(
-        provider: MatchDataProvider,
-        speech: any SpeechService,
-        teamID: String = String(APIFootballMapper.nauticoTeamID)
-    ) {
-        self.provider = provider
+    /// Looks up the followed team's next fixture, when the provider can supply one.
+    private let nextFixtureLookup: (@Sendable () async throws -> Match?)?
+
+    /// Follows the club through a configured live vendor.
+    init(source: LiveDataSource, speech: any SpeechService) {
+        self.provider = source.provider
         self.speech = speech
-        self.teamID = teamID
+        self.follows = source.follows
+        self.nextFixtureLookup = source.nextFixture
     }
 
-    /// Whether the live provider is configured at all.
+    /// Follows a team by its domain identifier, against any provider.
+    ///
+    /// Without a next-fixture lookup, since that is outside ``MatchDataProvider``: the app simply
+    /// says there is no match, which is true and sufficient.
+    init(provider: MatchDataProvider, speech: any SpeechService, teamID: String) {
+        self.provider = provider
+        self.speech = speech
+        self.follows = { $0.id == teamID }
+        self.nextFixtureLookup = nil
+    }
+
+    /// Whether a live provider is configured at all.
     ///
     /// Without a credential the control cannot work, and saying so is better than letting someone
     /// press a button that silently does nothing.
-    static var isAvailable: Bool { AppConfiguration.hasAPIFootballKey }
+    static var isAvailable: Bool { LiveDataSource.configured != nil }
 
     // MARK: - Lookup
 
@@ -65,13 +77,13 @@ final class LiveMatchFinder {
 
         do {
             let live = try await provider.liveMatches(competition: .brasileiraoSerieB, season: season)
-            let ours = live.first { $0.homeTeam.id == teamID || $0.awayTeam.id == teamID }
+            let ours = live.first { follows($0.homeTeam) || follows($0.awayTeam) }
 
             if let ours {
                 outcome = .live(ours)
                 await speech.speakNow(liveAnnouncement(for: ours), priority: .high)
             } else {
-                let next = try? await nextFixture()
+                let next = try? await nextFixtureLookup?()
                 outcome = .idle(next: next)
                 await speech.speakNow(idleAnnouncement(next: next), priority: .high)
             }
@@ -85,18 +97,6 @@ final class LiveMatchFinder {
         }
 
         isSearching = false
-    }
-
-    /// The next scheduled fixture, when the provider can supply one.
-    ///
-    /// Only ``APIFootballProvider`` answers this, since it is outside ``MatchDataProvider``. With
-    /// any other provider the app simply says there is no match, which is true and sufficient.
-    private func nextFixture() async throws -> Match? {
-        guard let live = provider as? APIFootballProvider,
-              let vendorID = Int(teamID)
-        else { return nil }
-
-        return try await live.nextFixture(forTeam: vendorID)
     }
 
     // MARK: - Wording
@@ -139,6 +139,6 @@ final class LiveMatchFinder {
     }
 
     private func opponentName(in match: Match) -> String {
-        match.homeTeam.id == teamID ? match.awayTeam.shortName : match.homeTeam.shortName
+        follows(match.homeTeam) ? match.awayTeam.shortName : match.homeTeam.shortName
     }
 }

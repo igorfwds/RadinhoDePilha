@@ -445,7 +445,11 @@ nonisolated private extension TemplateNarrationEngine {
 
     func periodStartSentence(for event: MatchEvent) -> String {
         // No time marker: "Aos 0 minutos do primeiro tempo. Começa o jogo." states the obvious.
-        pick(phrasebook.periodStart(MatchPeriod.containing(minute: event.minute)), for: event)
+        //
+        // A period starts on the minute that closed the one before, so the period being opened
+        // is the one containing the minute just after. Reading minute 45 itself would announce
+        // the second half as the start of the match.
+        pick(phrasebook.periodStart(MatchPeriod.containing(minute: event.minute + 1)), for: event)
     }
 
     func periodEndSentence(for event: MatchEvent, in match: Match) -> String {

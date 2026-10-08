@@ -11,5 +11,13 @@
 	     honours those for keys it already knows about. -->
 	<key>APIFootballKey</key>
 	<string>$(API_FOOTBALL_KEY)</string>
+	<key>SportmonksToken</key>
+	<string>$(SPORTMONKS_TOKEN)</string>
+	<!-- Together these two show the app's Documents folder in the Files app, under
+	     "No meu iPhone", which is how the Sportmonks recordings leave the device. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

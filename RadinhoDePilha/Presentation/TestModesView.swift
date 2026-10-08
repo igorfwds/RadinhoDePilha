@@ -21,6 +21,7 @@ struct TestModesView: View {
     @State private var dump = MatchDumpModel()
     @State private var finder: LiveMatchFinder?
     @State private var showsIdleAlert = false
+    @State private var recordings = SportmonksRecordings.Summary.empty
 
     var body: some View {
         NavigationStack {
@@ -28,8 +29,10 @@ struct TestModesView: View {
                 dumpSection
                 simulateSection
                 liveSection
+                recordingsSection
             }
             .navigationTitle("Modos de teste")
+            .onAppear { recordings = SportmonksRecordings.summary() }
             .alert("Nenhuma partida agora", isPresented: $showsIdleAlert) {
                 Button("Entendi", role: .cancel) {}
             } message: {
@@ -158,6 +161,26 @@ struct TestModesView: View {
         }
     }
 
+    // MARK: - Recordings
+
+    private var recordingsSection: some View {
+        Section {
+            LabeledContent("Respostas gravadas", value: "\(recordings.count)")
+            LabeledContent("Espaço usado", value: recordings.formattedSize)
+        } header: {
+            Text("Gravações da Sportmonks")
+        } footer: {
+            Text(
+                """
+                Durante uma partida ao vivo, o app guarda a cada consulta a resposta completa da \
+                Sportmonks, e anota em texto os comentários recebidos e as frases narradas. Os \
+                arquivos ficam no app Arquivos, em No Meu iPhone, Radinho de Pilha, Gravacoes, de \
+                onde podem ser compartilhados depois do jogo.
+                """
+            )
+        }
+    }
+
     // MARK: - Live lookup
 
     private func searchForLiveMatch() async {
@@ -180,14 +203,17 @@ struct TestModesView: View {
     private func liveFinder() -> LiveMatchFinder {
         if let finder { return finder }
 
-        let provider: MatchDataProvider =
-            if let key = AppConfiguration.apiFootballKey {
-                APIFootballProvider(apiKey: key)
+        let created =
+            if let source = LiveDataSource.configured {
+                LiveMatchFinder(source: source, speech: speech)
             } else {
-                FixtureMatchDataProvider(matches: [])
+                LiveMatchFinder(
+                    provider: FixtureMatchDataProvider(matches: []),
+                    speech: speech,
+                    teamID: String(APIFootballMapper.nauticoTeamID)
+                )
             }
 
-        let created = LiveMatchFinder(provider: provider, speech: speech)
         finder = created
 
         return created

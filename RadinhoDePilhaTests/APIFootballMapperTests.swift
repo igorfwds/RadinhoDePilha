@@ -282,9 +282,26 @@ struct APIFootballMapperTests {
         // the narration's running score depends on it.
         let match = APIFootballMapper.match(from: try showcaseFixture(), events: try events())
 
-        let keys = match.events.map { $0.minute * 100 + ($0.stoppageMinute ?? 0) }
+        // The second-half kick-off is left out of the comparison: it carries minute 45 with no
+        // stoppage, yet belongs after the first half's stoppage time, which the next test covers.
+        let keys = match.events
+            .filter { !($0.kind == .periodStart && $0.minute > 0) }
+            .map { $0.minute * 100 + ($0.stoppageMinute ?? 0) }
 
         #expect(keys == keys.sorted())
+    }
+
+    @Test("The second half starts after the first half's stoppage time and whistle")
+    func secondHalfStartsAfterFirstHalfStoppage() throws {
+        let events = APIFootballMapper.match(from: try showcaseFixture(), events: try events()).events
+
+        let restart = try #require(events.firstIndex { $0.kind == .periodStart && $0.minute > 0 })
+        let halfTime = try #require(events.firstIndex { $0.kind == .periodEnd })
+        let lastOfFirstHalf = try #require(events.lastIndex { $0.minute == 45 && $0.stoppageMinute != nil })
+
+        // The recorded match has bookings at 45+1 and 45+3.
+        #expect(lastOfFirstHalf < restart)
+        #expect(halfTime < restart)
     }
 
     @Test("The raw payload really is out of order, so the sort is not decorative")

@@ -77,16 +77,21 @@ final class MatchNarrationViewModel {
     /// Failures tolerated before the loop gives up.
     private let failureLimit = 3
 
+    /// Written record of what was narrated live, kept only while a vendor is being evaluated.
+    private let log: MatchTimelineLog?
+
     init(
         provider: MatchDataProvider,
         engine: any NarrationEngine = TemplateNarrationEngine(),
         speech: any SpeechService,
-        pollInterval: Duration = .seconds(60)
+        pollInterval: Duration = .seconds(60),
+        log: MatchTimelineLog? = nil
     ) {
         self.provider = provider
         self.engine = engine
         self.speech = speech
         self.pollInterval = pollInterval
+        self.log = log
     }
 
     // MARK: - Loading
@@ -214,6 +219,13 @@ final class MatchNarrationViewModel {
             guard let narration = engine.narrate(event, in: fresh) else { continue }
 
             spokenIDs.insert(narration.id)
+            log?.narrated(
+                narration.text,
+                minute: event.minute,
+                stoppageMinute: event.stoppageMinute,
+                kind: event.kind.rawValue,
+                matchID: fresh.id
+            )
             await speech.speak(narration)
         }
 
