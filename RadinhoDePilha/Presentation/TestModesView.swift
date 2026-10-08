@@ -135,6 +135,17 @@ struct TestModesView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+
+            if case .idle(next: let next?) = finder?.outcome {
+                Button {
+                    Task {
+                        await speech.speakNow(PreMatchBriefing().text(for: next), priority: .high)
+                    }
+                } label: {
+                    Label("Ouvir o pré-jogo", systemImage: "clock")
+                }
+                .accessibilityHint("Diz quem joga, quem é o mandante e quando a partida começa")
+            }
         } header: {
             Text("Ao vivo de verdade")
         } footer: {

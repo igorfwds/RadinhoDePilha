@@ -141,6 +141,7 @@ struct MatchNarrationView: View {
         }
         .padding(20)
         .modifier(AdaptiveGlass(cornerRadius: 28))
+        .modifier(DisclosureGestures(viewModel: viewModel))
         .padding(.horizontal)
         .padding(.bottom, 8)
         // One element instead of five. Swiping through "Náutico", "2", "×", "1", "CRB" separately
@@ -148,6 +149,24 @@ struct MatchNarrationView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(scoreboardAnnouncement(match))
         .accessibilityAddTraits(.isHeader)
+        .accessibilityHint("Abra as ações para ouvir o placar, os lances recentes ou o resumo")
+        // The same layers the gestures reach, for a screen reader, which takes over taps and
+        // swipes and would otherwise leave them unreachable.
+        .accessibilityAction(named: "Dizer o placar") {
+            Task { await viewModel.speakScore() }
+        }
+        .accessibilityAction(named: "Dizer os lances recentes") {
+            Task { await viewModel.speakRecentMoments() }
+        }
+        .accessibilityAction(named: "Dizer o resumo completo") {
+            Task { await viewModel.speakSummary() }
+        }
+        .accessibilityAction(named: "Lance anterior") {
+            Task { await viewModel.speakPreviousMoment() }
+        }
+        .accessibilityAction(named: "Próximo lance") {
+            Task { await viewModel.speakNextMoment() }
+        }
     }
 
     /// Score on one line: home, scoreline, away.
@@ -288,6 +307,13 @@ struct MatchNarrationView: View {
             GlassEffectContainer(spacing: 12) {
                 HStack(spacing: 12) {
                     playButton
+
+                    // Offered only before kick-off, when there is nothing to summarise yet and
+                    // the useful thing to hear is who plays whom and when.
+                    if viewModel.match?.status == .scheduled {
+                        previewButton
+                    }
+
                     summaryButton
                 }
             }
@@ -333,6 +359,22 @@ struct MatchNarrationView: View {
         )
     }
 
+    private var previewButton: some View {
+        Button {
+            Task { await viewModel.speakPreview() }
+        } label: {
+            Label("Pré-jogo", systemImage: "clock")
+                .font(.title3)
+                .labelStyle(.iconOnly)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 18)
+        }
+        .buttonStyle(.glass)
+        .glassEffectID("preview", in: glassNamespace)
+        .accessibilityLabel("Pré-jogo")
+        .accessibilityHint("Diz quem joga, quem é o mandante e quando a partida começa")
+    }
+
     private var summaryButton: some View {
         Button {
             Task { await viewModel.speakSummary() }
@@ -347,6 +389,55 @@ struct MatchNarrationView: View {
         .glassEffectID("summary", in: glassNamespace)
         .accessibilityLabel("Resumo da partida")
         .accessibilityHint("Diz o placar, o tempo de jogo e quem marcou")
+    }
+}
+
+// MARK: - Progressive disclosure
+
+/// Gestures on the scoreboard that reveal the match at increasing depth.
+///
+/// One tap says the score, two taps say the latest moments, and a long press gives the full
+/// summary. Swiping sideways steps through the moments one at a time: to the right goes back,
+/// to the left returns towards the present.
+///
+/// The listener chooses how much to hear instead of being handed everything at once, which matters
+/// more in audio than on screen: a sentence cannot be skimmed.
+private struct DisclosureGestures: ViewModifier {
+    let viewModel: MatchNarrationViewModel
+
+    /// Shorter than this, a drag is treated as an unsteady tap rather than a swipe.
+    private let swipeDistance: CGFloat = 40
+
+    func body(content: Content) -> some View {
+        content
+            .contentShape(.rect)
+            // Declared before the single tap so that a double tap is not first read as two taps.
+            .onTapGesture(count: 2) {
+                Task { await viewModel.speakRecentMoments() }
+            }
+            .onTapGesture {
+                Task { await viewModel.speakScore() }
+            }
+            .onLongPressGesture {
+                Task { await viewModel.speakSummary() }
+            }
+            .gesture(
+                DragGesture(minimumDistance: swipeDistance)
+                    .onEnded { value in
+                        let horizontal = value.translation.width
+
+                        // Mostly sideways, so a vertical scroll that starts here is not hijacked.
+                        guard abs(horizontal) > abs(value.translation.height) else { return }
+
+                        Task {
+                            if horizontal > 0 {
+                                await viewModel.speakPreviousMoment()
+                            } else {
+                                await viewModel.speakNextMoment()
+                            }
+                        }
+                    }
+            )
     }
 }
 

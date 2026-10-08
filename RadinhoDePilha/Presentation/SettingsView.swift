@@ -18,6 +18,9 @@ struct SettingsView: View {
     /// like the real thing rather than approximating it.
     let speech: any SpeechService
 
+    /// Plays the signals on the learning screen, the same ones heard during a match.
+    let cues: EventCueCenter
+
     @State private var voices: [InstalledVoice] = []
 
     /// Whether a voice better than compact exists, read once rather than per render.
@@ -37,6 +40,7 @@ struct SettingsView: View {
                 personaSection
                 voiceSection
                 rateSection
+                signalsSection
                 textSizeSection
             }
             .navigationTitle("Ajustes")
@@ -172,6 +176,34 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - Signals
+
+    private var signalsSection: some View {
+        Section {
+            Toggle("Sons de aviso", isOn: $settings.earconsEnabled)
+                .accessibilityHint("Toca um som curto antes de cada lance, diferente para cada tipo")
+
+            Toggle("Vibrações", isOn: $settings.hapticsEnabled)
+                .accessibilityHint("Vibra em um padrão diferente para cada tipo de lance")
+
+            NavigationLink {
+                CueLearningView(cues: cues, speech: speech)
+            } label: {
+                Label("Aprender os sinais", systemImage: "hand.tap")
+            }
+            .accessibilityHint("Abre uma tela para ouvir e sentir cada sinal")
+        } header: {
+            Text("Sinais")
+        } footer: {
+            Text(
+                """
+                Antes de narrar um lance, o app toca um som e vibra em um padrão próprio daquele \
+                tipo de lance. Assim dá para saber o que aconteceu antes mesmo de a frase começar.
+                """
+            )
+        }
+    }
+
     // MARK: - Text size
 
     private var textSizeSection: some View {
@@ -261,5 +293,5 @@ struct SettingsView: View {
 }
 
 #Preview("Ajustes") {
-    SettingsView(settings: AppSettings(), speech: AVSpeechService())
+    SettingsView(settings: AppSettings(), speech: AVSpeechService(), cues: EventCueCenter())
 }

@@ -22,6 +22,7 @@ struct RootView: View {
     @State private var selectedTab = Tab.narration
 
     private let speech: any SpeechService
+    private let cues: EventCueCenter
     private let recordedMatch: Match?
 
     private enum Tab: Hashable {
@@ -34,12 +35,14 @@ struct RootView: View {
         settings: AppSettings,
         viewModel: MatchNarrationViewModel,
         speech: any SpeechService,
+        cues: EventCueCenter,
         matchID: String,
         recordedMatch: Match?
     ) {
         self.settings = settings
         self.viewModel = viewModel
         self.speech = speech
+        self.cues = cues
         self.followedMatchID = matchID
         self.recordedMatch = recordedMatch
     }
@@ -68,7 +71,7 @@ struct RootView: View {
             }
 
             SwiftUI.Tab("Ajustes", systemImage: "gearshape", value: Tab.settings) {
-                SettingsView(settings: settings, speech: speech)
+                SettingsView(settings: settings, speech: speech, cues: cues)
             }
         }
         // Applied at the root so every screen honours the choice, including the ones that only
@@ -92,6 +95,12 @@ struct RootView: View {
         .onChange(of: settings.voiceIdentifier) {
             Task { await speech.setVoice(identifier: settings.voiceIdentifier) }
         }
+        .onChange(of: settings.earconsEnabled) {
+            Task { await cues.setEarconsEnabled(settings.earconsEnabled) }
+        }
+        .onChange(of: settings.hapticsEnabled) {
+            Task { await cues.setHapticsEnabled(settings.hapticsEnabled) }
+        }
     }
 
     /// Switches the narration screen to a live match and brings it forward.
@@ -113,6 +122,8 @@ struct RootView: View {
         viewModel.setPersona(settings.persona)
         await speech.setRate(settings.rate)
         await speech.setVoice(identifier: settings.voiceIdentifier)
+        await cues.setEarconsEnabled(settings.earconsEnabled)
+        await cues.setHapticsEnabled(settings.hapticsEnabled)
     }
 }
 

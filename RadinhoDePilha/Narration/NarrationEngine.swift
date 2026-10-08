@@ -19,6 +19,13 @@ nonisolated struct Narration: Identifiable, Hashable, Sendable {
 
     /// Stoppage minute, when the event happened during added time.
     let stoppageMinute: Int?
+
+    /// Sound and vibration that announce this narration, when it describes a match event.
+    ///
+    /// Travels with the sentence instead of being triggered separately, because the two belong
+    /// together in time: the cue has to land immediately before its own sentence, and only the
+    /// speech queue knows when that sentence's turn comes.
+    var cue: EventCue? = nil
 }
 
 /// Turns match data into spoken narration.

@@ -41,7 +41,8 @@ nonisolated struct TemplateNarrationEngine: NarrationEngine {
             text: withoutRepeatedTimeMarker(text, for: event, in: match),
             priority: priority(for: event.kind),
             minute: event.minute,
-            stoppageMinute: event.stoppageMinute
+            stoppageMinute: event.stoppageMinute,
+            cue: EventCue(event: event, in: match)
         )
     }
 
