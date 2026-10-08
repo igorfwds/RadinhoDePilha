@@ -55,8 +55,18 @@ struct SportmonksMapperTests {
             stateId: stateID,
             startingAtTimestamp: 1_791_498_600,
             participants: [
-                SportmonksParticipant(id: 20, name: "Novorizontino", meta: .init(location: "away")),
-                SportmonksParticipant(id: 10, name: "Náutico", meta: .init(location: "home"))
+                SportmonksParticipant(
+                    id: 20,
+                    name: "Novorizontino",
+                    imagePath: nil,
+                    meta: .init(location: "away")
+                ),
+                SportmonksParticipant(
+                    id: 10,
+                    name: "Náutico",
+                    imagePath: nil,
+                    meta: .init(location: "home")
+                )
             ],
             scores: [],
             periods: periods,
@@ -129,7 +139,8 @@ struct SportmonksMapperTests {
     func kindsAreCounted() throws {
         let events = try recorded().events
 
-        #expect(events.count { $0.kind == .yellowCard } == 6)
+        // Five of the six bookings in the payload: the sixth was shown to a coach.
+        #expect(events.count { $0.kind == .yellowCard } == 5)
         #expect(events.count { $0.kind == .substitution } == 10)
         #expect(events.count { $0.kind == .varDecision } == 1)
     }
@@ -209,6 +220,12 @@ struct SportmonksMapperTests {
 
     // MARK: - Events
 
+    @Test("A card shown to a coach is not narrated as a player's")
+    func coachCardIsDropped() throws {
+        // Derek McInnes, booked on the bench in the fifth minute of the recorded match.
+        #expect(try !recorded().events.contains { $0.player == "Derek McInnes" })
+    }
+
     @Test("A rescinded card is not narrated")
     func rescindedCardIsDropped() {
         let card = SportmonksEvent(
@@ -221,7 +238,8 @@ struct SportmonksMapperTests {
             info: nil,
             addition: nil,
             sortOrder: 1,
-            rescinded: true
+            rescinded: true,
+            coachId: nil
         )
         let match = SportmonksMapper.match(from: fixture(stateID: 2, events: [card]))
 
@@ -240,18 +258,19 @@ struct SportmonksMapperTests {
         #expect(SportmonksMapper.status(fromStateID: id) == expected)
     }
 
-    // MARK: - Followed club
+    // MARK: - Club naming and example match
 
-    @Test("Náutico is recognised whatever spelling the vendor uses")
-    func nauticoIsRecognised() {
+    @Test("Náutico gets its curated name and nickname from the vendor's spelling")
+    func nauticoIsCurated() {
         let match = SportmonksMapper.match(from: fixture(stateID: 1))
 
-        #expect(SportmonksMapper.isNautico(match.homeTeam))
-        #expect(!SportmonksMapper.isNautico(match.awayTeam))
-        // The curated entry applies, so the nickname the narration alternates with is present.
+        #expect(match.homeTeam.shortName == "Náutico")
+        // The nickname the narration alternates with.
         #expect(match.homeTeam.nickname == "Timbu")
+    }
 
-        let formal = ClubDirectory.team(id: 1, vendorName: "Clube Nautico Capibaribe")
-        #expect(SportmonksMapper.isNautico(formal))
+    @Test("The crest comes from the vendor's image path")
+    func crestIsMapped() throws {
+        #expect(try recorded().homeTeam.crestURL?.host == "cdn.sportmonks.com")
     }
 }

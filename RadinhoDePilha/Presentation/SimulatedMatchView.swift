@@ -59,7 +59,7 @@ struct SimulatedMatchView: View {
                     Text(
                         """
                         \(base.homeTeam.shortName) × \(base.awayTeam.shortName), \
-                        \(base.events.count) lances gravados da API-Football.
+                        \(base.events.count) lances gravados da Sportmonks.
                         """
                     )
                 } else {

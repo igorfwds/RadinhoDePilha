@@ -79,6 +79,9 @@ actor ScriptedMatchDataProvider: MatchDataProvider {
         self.states = states
     }
 
+    /// How many single-match requests were made, for tests that care about quota.
+    var matchRequests: Int { callCount }
+
     func liveMatches(competition: Competition, season: Int) async throws -> [Match] {
         states.isEmpty ? [] : [states[min(callCount, states.count - 1)]]
     }
@@ -281,6 +284,24 @@ struct MatchNarrationViewModelTests {
         await viewModel.startNarrating()
 
         #expect(await spy.interruptingText.contains { $0.contains("terminou") })
+    }
+
+    @Test("A requested start happens once the match loads, and only once")
+    func startAfterLoadingIsOneShot() async {
+        // The screen reloads whenever its tab reappears. A standing "start on load" would restart
+        // narration the listener had deliberately stopped.
+        let (viewModel, spy) = makeViewModel()
+        viewModel.startAfterLoading()
+
+        await viewModel.load(matchID: SampleMatches.liveComeback.id)
+        #expect(viewModel.isNarrating)
+
+        await viewModel.stopNarrating()
+        await viewModel.load(matchID: SampleMatches.liveComeback.id)
+
+        #expect(!viewModel.isNarrating)
+        // The opening names the match, which is how the listener knows the right one was found.
+        #expect(await spy.interruptingText.contains { $0.contains("Náutico") && $0.contains("CRB") })
     }
 
     @Test("Starting live narration confirms through an interrupting utterance")
