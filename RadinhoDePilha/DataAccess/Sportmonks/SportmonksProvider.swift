@@ -30,6 +30,20 @@ nonisolated struct SportmonksProvider: MatchDataProvider {
     /// Everything the mapper reads beyond the fixture itself.
     private static let includes = "participants;scores;periods;events"
 
+    /// The same, plus the running totals that corners, fouls and offsides are worked out from.
+    private static let includesWithTotals = includes + ";statistics;lineups.details"
+
+    /// Restricts the totals to the handful the app reads.
+    ///
+    /// Without it the payload carries some nine hundred player statistics and weighs about
+    /// 160 KB; with it, under 30 KB. At one request every few seconds on a stadium's mobile
+    /// network, that difference decides whether the request arrives at all.
+    private static let totalsFilter =
+        "fixtureStatisticTypes:34,56,51;lineupDetailTypes:56,96,51"
+
+    /// Remembers the totals between polls, which is what turns them into individual plays.
+    private let plays = SportmonksPlayTracker()
+
     /// Gap between polls that suits this vendor.
     ///
     /// Three and a half seconds is about 1,030 requests an hour. The recorder adds its own on
@@ -69,19 +83,41 @@ nonisolated struct SportmonksProvider: MatchDataProvider {
     }
 
     func match(withID id: String) async throws -> Match {
-        let fixture: SportmonksFixture? = try await get(
-            path: "fixtures/\(id)",
-            query: [URLQueryItem(name: "include", value: Self.includes)]
-        )
-
-        guard let fixture else {
+        guard let fixture = try await fixture(withID: id) else {
             throw MatchDataError.matchNotFound(id: id)
         }
 
-        let match = SportmonksMapper.match(from: fixture)
+        let match = await plays.enrich(SportmonksMapper.match(from: fixture), from: fixture)
         record(match)
 
         return match
+    }
+
+    /// Fetches a fixture with its running totals, falling back to the plain request.
+    ///
+    /// The totals are an addition, and the narration of goals must not depend on them. If the
+    /// richer request fails for any reason, say a plan that does not include the statistics, the
+    /// plain one is used from then on for the rest of the session.
+    private func fixture(withID id: String) async throws -> SportmonksFixture? {
+        let plain = [URLQueryItem(name: "include", value: Self.includes)]
+
+        guard await plays.shouldRequestTotals else {
+            return try await get(path: "fixtures/\(id)", query: plain)
+        }
+
+        do {
+            return try await get(
+                path: "fixtures/\(id)",
+                query: [
+                    URLQueryItem(name: "include", value: Self.includesWithTotals),
+                    URLQueryItem(name: "filters", value: Self.totalsFilter)
+                ]
+            )
+        } catch {
+            await plays.stopRequestingTotals()
+
+            return try await get(path: "fixtures/\(id)", query: plain)
+        }
     }
 
     /// Hands a match being played, or just ended, to the recorder without waiting for it.

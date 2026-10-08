@@ -326,11 +326,48 @@ nonisolated private extension TemplateNarrationEngine {
             periodStartSentence(for: event)
         case .periodEnd:
             periodEndSentence(for: event, in: match)
+        case .corner:
+            cornerSentence(for: event)
+        case .foul:
+            foulSentence(for: event)
+        case .offside:
+            offsideSentence(for: event)
         case .unknown:
             // Silence on purpose. Narration is a serial channel, and speaking an event the app
             // cannot describe would spend it on noise.
             nil
         }
+    }
+
+    // Corners, fouls and offsides are kept to a few words and carry no time reference. They
+    // happen dozens of times a match and are narrated as they happen, so a long sentence would
+    // still be playing when the next one arrives.
+
+    func cornerSentence(for event: MatchEvent) -> String {
+        "Escanteio para o \(spokenName(of: event.team, for: event))."
+    }
+
+    func foulSentence(for event: MatchEvent) -> String {
+        let team = spokenName(of: event.team, for: event)
+
+        switch (event.player, event.relatedPlayer) {
+        case let (offender?, victim?):
+            return "Falta do \(team). \(offender) em \(victim)."
+        case let (offender?, nil):
+            return "Falta do \(team), de \(offender)."
+        case let (nil, victim?):
+            return "Falta do \(team) em \(victim)."
+        case (nil, nil):
+            return "Falta do \(team)."
+        }
+    }
+
+    func offsideSentence(for event: MatchEvent) -> String {
+        let team = spokenName(of: event.team, for: event)
+
+        guard let player = event.player else { return "Impedimento do \(team)." }
+
+        return "Impedimento do \(team). \(player) estava adiantado."
     }
 
     func goalSentence(for event: MatchEvent, in match: Match) -> String {
@@ -603,7 +640,7 @@ nonisolated private extension TemplateNarrationEngine {
             .high
         case .yellowCard, .substitution, .periodStart, .periodEnd:
             .normal
-        case .unknown:
+        case .corner, .foul, .offside, .unknown:
             .low
         }
     }
