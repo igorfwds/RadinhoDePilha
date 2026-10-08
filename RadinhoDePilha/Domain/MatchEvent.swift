@@ -17,6 +17,17 @@ nonisolated enum MatchEventKind: String, Hashable, Sendable, CaseIterable {
     case varDecision
     case periodStart
     case periodEnd
+
+    /// A corner kick awarded to ``MatchEvent/team``.
+    case corner
+
+    /// A foul committed by ``MatchEvent/team``. The player is who committed it and the related
+    /// player who suffered it, when either is known.
+    case foul
+
+    /// An offside given against ``MatchEvent/team``.
+    case offside
+
     case unknown
 }
 
@@ -42,6 +53,14 @@ nonisolated struct MatchEvent: Identifiable, Hashable, Sendable {
     /// Raw provider detail, kept for diagnostics and for ``unknown`` cases.
     let detail: String?
 
+    /// Ordinal among occurrences of the same kind for the same team, when the event was worked
+    /// out from a running total instead of being reported individually.
+    ///
+    /// Two corners for the same side in the same minute are otherwise indistinguishable, and
+    /// would share an identifier: the second would never be narrated. The total after the
+    /// occurrence tells them apart and stays the same on every later request.
+    var sequence: Int? = nil
+
     /// Identifier derived from the fields that make the occurrence unique within a match.
     ///
     /// Computed rather than stored because providers typically deliver events as a plain
@@ -57,7 +76,8 @@ nonisolated struct MatchEvent: Identifiable, Hashable, Sendable {
             kind.rawValue,
             team.id,
             player ?? "-"
-        ].joined(separator: "|")
+        ]
+        .joined(separator: "|") + (sequence.map { "|#\($0)" } ?? "")
     }
 
     /// Absolute minute, for chronological ordering including stoppage time.
