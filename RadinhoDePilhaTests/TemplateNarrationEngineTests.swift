@@ -282,6 +282,14 @@ struct TemplateNarrationEngineTests {
         #expect(!narration.text.contains("Minuto 0"))
     }
 
+    @Test("The restart after the interval is announced as the second half")
+    func restartIsTheSecondHalf() throws {
+        let restart = event(.periodStart, minute: 45)
+        let narration = try #require(engine.narrate(restart, in: match(events: [restart])))
+
+        #expect(RadioPhrasebook().periodStart(.secondHalf).contains(narration.text))
+    }
+
     // MARK: - Silence and priority
 
     @Test("An unrecognised event produces no narration")

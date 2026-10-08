@@ -254,12 +254,22 @@ nonisolated enum APIFootballMapper {
     /// Necessary because the vendor does not: a real payload for Náutico 4×3 Tombense lists 45+3
     /// before 45+1. Period boundaries sort before other events in the same minute, so kick-off
     /// precedes a first-minute goal.
+    ///
+    /// The second-half kick-off is the exception. It shares minute 45 with the stoppage time of
+    /// the first half, and ordering it by stoppage alone would place it before a booking at 45+1
+    /// and before the half-time whistle, so a restart sorts after everything else in its minute.
     static func chronological(_ events: [MatchEvent]) -> [MatchEvent] {
-        events.sorted { lhs, rhs in
+        func stoppage(_ event: MatchEvent) -> Int {
+            let isRestart = event.kind == .periodStart && event.minute > 0
+
+            return isRestart ? Int.max : event.stoppageMinute ?? 0
+        }
+
+        return events.sorted { lhs, rhs in
             if lhs.minute != rhs.minute { return lhs.minute < rhs.minute }
 
-            let lhsStoppage = lhs.stoppageMinute ?? 0
-            let rhsStoppage = rhs.stoppageMinute ?? 0
+            let lhsStoppage = stoppage(lhs)
+            let rhsStoppage = stoppage(rhs)
             if lhsStoppage != rhsStoppage { return lhsStoppage < rhsStoppage }
 
             return sortRank(lhs.kind) < sortRank(rhs.kind)
