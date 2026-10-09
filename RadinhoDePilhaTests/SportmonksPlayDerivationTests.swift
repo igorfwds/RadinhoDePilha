@@ -74,14 +74,15 @@ struct SportmonksPlayDerivationTests {
         #expect(events.first?.relatedPlayer == nil)
     }
 
-    @Test("A foul is left unnamed when two players changed at once, rather than guessed")
-    func ambiguousFoulHasNoOffender() {
+    @Test("With two offenders at once, no victim is guessed for either")
+    func simultaneousOffendersGetNoVictim() {
         let events = derive(
-            from: counters(homeFouls: 3, foulsCommitted: [1: 1, 2: 0]),
-            to: counters(homeFouls: 4, foulsCommitted: [1: 2, 2: 1])
+            from: counters(homeFouls: 3, foulsCommitted: [1: 1, 2: 0], foulsDrawn: [3: 0]),
+            to: counters(homeFouls: 4, foulsCommitted: [1: 2, 2: 1], foulsDrawn: [3: 1])
         )
 
-        #expect(events.first?.player == nil)
+        #expect(events.first?.kind == .foul)
+        #expect(events.first?.relatedPlayer == nil)
     }
 
     @Test("An offside names the player whose own total grew")
@@ -123,6 +124,137 @@ struct SportmonksPlayDerivationTests {
         #expect(match.events[1].id == "23|0|goal|crb|Ribamar")
     }
 
+    // MARK: - Names that arrive separately
+
+    private let start = Date(timeIntervalSince1970: 1_000_000)
+
+    @Test("A foul is announced at once, and its players are named when their totals catch up")
+    func namesFollowAnUnnamedFoul() {
+        var ledger = SportmonksPlayLedger()
+        _ = ledger.advance(to: counters(homeFouls: 3, foulsCommitted: [1: 1]), in: match, at: start)
+
+        let atOnce = ledger.advance(
+            to: counters(homeFouls: 4, foulsCommitted: [1: 1]),
+            in: match,
+            at: start.addingTimeInterval(4)
+        )
+        let later = ledger.advance(
+            to: counters(homeFouls: 4, foulsCommitted: [1: 2], foulsDrawn: [3: 1]),
+            in: match,
+            at: start.addingTimeInterval(35)
+        )
+
+        #expect(atOnce.map(\.kind) == [.foul])
+        #expect(atOnce.first?.player == nil)
+        #expect(later.map(\.kind) == [.foulAttribution])
+        #expect(later.first?.player == "Wanderson")
+        #expect(later.first?.relatedPlayer == "Ribamar")
+        #expect(later.first?.team.id == match.homeTeam.id)
+    }
+
+    @Test("Names that arrive before the team total are kept for the foul they belong to")
+    func earlyNamesAreUsedWhenTheFoulArrives() {
+        var ledger = SportmonksPlayLedger()
+        _ = ledger.advance(to: counters(awayFouls: 1), in: match, at: start)
+
+        let early = ledger.advance(
+            to: counters(awayFouls: 1, foulsCommitted: [3: 1], foulsDrawn: [1: 1]),
+            in: match,
+            at: start.addingTimeInterval(4)
+        )
+        let foul = ledger.advance(
+            to: counters(awayFouls: 2, foulsCommitted: [3: 1], foulsDrawn: [1: 1]),
+            in: match,
+            at: start.addingTimeInterval(34)
+        )
+
+        #expect(early.isEmpty)
+        #expect(foul.map(\.kind) == [.foul])
+        #expect(foul.first?.player == "Ribamar")
+        #expect(foul.first?.relatedPlayer == "Wanderson")
+    }
+
+    @Test("A foul that never gets its names is not named after a later one")
+    func staleFoulsStopWaitingForNames() {
+        var ledger = SportmonksPlayLedger()
+        _ = ledger.advance(to: counters(homeFouls: 3), in: match, at: start)
+        _ = ledger.advance(to: counters(homeFouls: 4), in: match, at: start.addingTimeInterval(4))
+
+        // Kept alive with unchanged totals, past the time names are expected within.
+        var clock = start.addingTimeInterval(4)
+        while clock < start.addingTimeInterval(SportmonksPlayLedger.namesExpectedWithin + 40) {
+            clock = clock.addingTimeInterval(30)
+            _ = ledger.advance(to: counters(homeFouls: 4), in: match, at: clock)
+        }
+
+        let late = ledger.advance(
+            to: counters(homeFouls: 4, foulsCommitted: [1: 1]),
+            in: match,
+            at: clock.addingTimeInterval(4)
+        )
+
+        #expect(late.isEmpty)
+    }
+
+    @Test("An offside is completed with its player the same way")
+    func offsideIsCompletedLater() {
+        var ledger = SportmonksPlayLedger()
+        _ = ledger.advance(to: counters(homeOffsides: 0), in: match, at: start)
+        _ = ledger.advance(
+            to: counters(homeOffsides: 1),
+            in: match,
+            at: start.addingTimeInterval(4)
+        )
+
+        let later = ledger.advance(
+            to: counters(homeOffsides: 1, offsides: [2: 1]),
+            in: match,
+            at: start.addingTimeInterval(40)
+        )
+
+        #expect(later.map(\.kind) == [.offsideAttribution])
+        #expect(later.first?.player == "Marquinhos")
+    }
+
+    @Test("After a long gap without data, what changed meanwhile is not narrated as new")
+    func aLongGapResetsTheBaseline() {
+        var ledger = SportmonksPlayLedger()
+        _ = ledger.advance(to: counters(homeCorners: 1, homeFouls: 2), in: match, at: start)
+
+        let afterOutage = ledger.advance(
+            to: counters(homeCorners: 3, homeFouls: 6),
+            in: match,
+            at: start.addingTimeInterval(SportmonksPlayLedger.baselineExpiresAfter + 30)
+        )
+        let next = ledger.advance(
+            to: counters(homeCorners: 4, homeFouls: 6),
+            in: match,
+            at: start.addingTimeInterval(SportmonksPlayLedger.baselineExpiresAfter + 34)
+        )
+
+        #expect(afterOutage.isEmpty)
+        #expect(next.map(\.kind) == [.corner])
+    }
+
+    @Test("The sentence that names the players says which side the foul was by")
+    func attributionIsNarrated() throws {
+        var ledger = SportmonksPlayLedger()
+        _ = ledger.advance(to: counters(homeFouls: 3, foulsCommitted: [1: 1]), in: match, at: start)
+        _ = ledger.advance(to: counters(homeFouls: 4, foulsCommitted: [1: 1]), in: match, at: start)
+
+        let attribution = try #require(
+            ledger.advance(
+                to: counters(homeFouls: 4, foulsCommitted: [1: 2], foulsDrawn: [3: 1]),
+                in: match,
+                at: start.addingTimeInterval(30)
+            ).first
+        )
+
+        let text = TemplateNarrationEngine().narrate(attribution, in: match)?.text
+
+        #expect(text == "A falta do Náutico foi de Wanderson, em Ribamar.")
+    }
+
     // MARK: - Narration
 
     @Test("Each derived play is narrated in a few words")
@@ -137,8 +269,7 @@ struct SportmonksPlayDerivationTests {
 
         let text = try #require(engine.narrate(foul, in: match)?.text)
 
-        #expect(text.hasPrefix("Falta do "))
-        #expect(text.hasSuffix("Wanderson em Ribamar."))
+        #expect(text == "Falta do Náutico. Wanderson em Ribamar.")
     }
 
     @Test("Frequent plays carry no sound or vibration")

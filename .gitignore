@@ -45,3 +45,7 @@ playground.xcworkspace
 ## A allowlist de domínios em .claude/apple/ fica versionada de propósito: documenta uma
 ## decisão do projeto (acesso à API-Football) e vale para qualquer máquina.
 .claude/settings.local.json
+
+## Gravações brutas dos fornecedores durante partidas
+## Dezenas de megabytes por jogo: ficam fora do git e precisam de cópia de segurança à parte.
+Gravacoes/

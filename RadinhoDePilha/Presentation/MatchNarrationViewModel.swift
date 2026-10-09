@@ -79,8 +79,11 @@ final class MatchNarrationViewModel {
     /// blocked without notice.
     private let pollInterval: Duration
 
-    /// Failures tolerated before the loop gives up.
-    private let failureLimit = 3
+    /// When the current run of failed polls began, or `nil` while polls are succeeding.
+    private var outageStartedAt: ContinuousClock.Instant?
+
+    /// How long polls may keep failing before the loop gives up.
+    private let outageLimit: Duration = .seconds(600)
 
     /// Written record of what was narrated live, kept only while a vendor is being evaluated.
     private let log: MatchTimelineLog?
@@ -317,6 +320,8 @@ final class MatchNarrationViewModel {
         consecutiveFailures += 1
 
         if consecutiveFailures == 1 {
+            outageStartedAt = .now
+
             // Said once, on the first failure. Repeating it every cycle would talk over the match
             // the listener is trying to follow.
             await speech.speak(
@@ -326,7 +331,12 @@ final class MatchNarrationViewModel {
             return
         }
 
-        guard consecutiveFailures >= failureLimit else { return }
+        // Measured in time, not in attempts. With a poll every few seconds, a fixed number of
+        // attempts gave up after ten seconds without signal, and a crowded stadium loses signal
+        // for longer than that as a matter of course. Reported from the first test at a ground.
+        guard let outageStartedAt, ContinuousClock.now - outageStartedAt >= outageLimit else {
+            return
+        }
 
         errorMessage = "Não foi possível continuar acompanhando a partida."
         suspend()
@@ -340,6 +350,7 @@ final class MatchNarrationViewModel {
         guard consecutiveFailures > 0 else { return }
 
         consecutiveFailures = 0
+        outageStartedAt = nil
         errorMessage = nil
         await speech.speak("Contato restabelecido.", priority: .normal)
     }
