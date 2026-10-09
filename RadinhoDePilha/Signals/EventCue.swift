@@ -67,7 +67,7 @@ nonisolated struct EventCue: Hashable, Sendable {
             resolved = .varReview
         case .periodStart, .periodEnd:
             resolved = .whistle
-        case .corner, .foul, .offside, .unknown:
+        case .corner, .foul, .offside, .foulAttribution, .offsideAttribution, .unknown:
             // Too frequent to signal: thirty fouls a match would turn the cue into noise, and
             // each one would delay its own sentence.
             return nil

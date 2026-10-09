@@ -28,6 +28,16 @@ nonisolated enum MatchEventKind: String, Hashable, Sendable, CaseIterable {
     /// An offside given against ``MatchEvent/team``.
     case offside
 
+    /// Who committed and who suffered a foul already announced without names.
+    ///
+    /// A separate occurrence rather than an update to the foul, because that is how it reaches
+    /// the listener: the foul is said at once, and the names a little later, when the vendor's
+    /// player totals catch up with its team totals.
+    case foulAttribution
+
+    /// Who was caught offside, for an offside already announced without a name.
+    case offsideAttribution
+
     case unknown
 }
 

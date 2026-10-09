@@ -332,6 +332,10 @@ nonisolated private extension TemplateNarrationEngine {
             foulSentence(for: event)
         case .offside:
             offsideSentence(for: event)
+        case .foulAttribution:
+            foulAttributionSentence(for: event)
+        case .offsideAttribution:
+            offsideAttributionSentence(for: event)
         case .unknown:
             // Silence on purpose. Narration is a serial channel, and speaking an event the app
             // cannot describe would spend it on noise.
@@ -342,13 +346,17 @@ nonisolated private extension TemplateNarrationEngine {
     // Corners, fouls and offsides are kept to a few words and carry no time reference. They
     // happen dozens of times a match and are narrated as they happen, so a long sentence would
     // still be playing when the next one arrives.
+    //
+    // The club is always called by its name here, never by its nickname. A foul and the sentence
+    // that later names its players are two separate events, and "Falta do Timbu" followed by
+    // "A falta do Náutico foi de Betão" would sound like two different sides.
 
     func cornerSentence(for event: MatchEvent) -> String {
-        "Escanteio para o \(spokenName(of: event.team, for: event))."
+        "Escanteio para o \(event.team.shortName)."
     }
 
     func foulSentence(for event: MatchEvent) -> String {
-        let team = spokenName(of: event.team, for: event)
+        let team = event.team.shortName
 
         switch (event.player, event.relatedPlayer) {
         case let (offender?, victim?):
@@ -363,11 +371,36 @@ nonisolated private extension TemplateNarrationEngine {
     }
 
     func offsideSentence(for event: MatchEvent) -> String {
-        let team = spokenName(of: event.team, for: event)
+        let team = event.team.shortName
 
         guard let player = event.player else { return "Impedimento do \(team)." }
 
         return "Impedimento do \(team). \(player) estava adiantado."
+    }
+
+    // The two below complete a play that was announced without names. They name the side again
+    // because up to a minute may have passed, and "essa falta" alone would leave the listener
+    // wondering which one.
+
+    func foulAttributionSentence(for event: MatchEvent) -> String? {
+        let team = event.team.shortName
+
+        switch (event.player, event.relatedPlayer) {
+        case let (offender?, victim?):
+            return "A falta do \(team) foi de \(offender), em \(victim)."
+        case let (offender?, nil):
+            return "A falta do \(team) foi de \(offender)."
+        case let (nil, victim?):
+            return "A falta do \(team) foi em \(victim)."
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    func offsideAttributionSentence(for event: MatchEvent) -> String? {
+        guard let player = event.player else { return nil }
+
+        return "O impedimento do \(event.team.shortName) foi de \(player)."
     }
 
     func goalSentence(for event: MatchEvent, in match: Match) -> String {
@@ -640,7 +673,7 @@ nonisolated private extension TemplateNarrationEngine {
             .high
         case .yellowCard, .substitution, .periodStart, .periodEnd:
             .normal
-        case .corner, .foul, .offside, .unknown:
+        case .corner, .foul, .offside, .foulAttribution, .offsideAttribution, .unknown:
             .low
         }
     }
