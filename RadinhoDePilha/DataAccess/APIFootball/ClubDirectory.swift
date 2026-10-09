@@ -24,11 +24,18 @@ nonisolated enum ClubDirectory {
         let name: String
         let shortName: String
         let nickname: String?
+        let epithets: [String]
 
-        init(_ shortName: String, full: String? = nil, nickname: String? = nil) {
+        init(
+            _ shortName: String,
+            full: String? = nil,
+            nickname: String? = nil,
+            epithets: [String] = []
+        ) {
             self.shortName = shortName
             self.name = full ?? shortName
             self.nickname = nickname
+            self.epithets = epithets
         }
     }
 
@@ -54,7 +61,8 @@ nonisolated enum ClubDirectory {
             name: entry?.name ?? vendorName,
             shortName: entry?.shortName ?? vendorName,
             nickname: entry?.nickname,
-            crestURL: logo.flatMap(URL.init(string:))
+            crestURL: logo.flatMap(URL.init(string:)),
+            epithets: entry?.epithets ?? []
         )
     }
 
@@ -65,9 +73,19 @@ nonisolated enum ClubDirectory {
 
     private static let clubs: [String: Entry] = [
         // MARK: The case study
-        "nautico recife": Entry("Náutico", full: "Clube Náutico Capibaribe", nickname: "Timbu"),
+        "nautico recife": Entry(
+            "Náutico",
+            full: "Clube Náutico Capibaribe",
+            nickname: "Timbu",
+            epithets: ["time alvirrubro"]
+        ),
         // The plain spelling, for vendors that do not append the city.
-        "nautico": Entry("Náutico", full: "Clube Náutico Capibaribe", nickname: "Timbu"),
+        "nautico": Entry(
+            "Náutico",
+            full: "Clube Náutico Capibaribe",
+            nickname: "Timbu",
+            epithets: ["time alvirrubro"]
+        ),
 
         // MARK: Série A
         "atletico-mg": Entry("Atlético Mineiro", full: "Clube Atlético Mineiro"),
