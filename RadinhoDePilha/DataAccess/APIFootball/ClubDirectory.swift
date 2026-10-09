@@ -15,10 +15,16 @@ import Foundation
 /// The entries were built from the clubs the API actually returns for Série A, B and C, so the
 /// keys are known to match rather than guessed.
 ///
-/// Nicknames are deliberately sparse. ``RadioPhrasebook`` alternates between club name and
-/// nickname the way radio commentary does, so a wrong nickname would be broadcast as fact. Only
-/// Náutico carries one: it is the subject of the case study, where the alternation matters, and
-/// naming an opponent by its club name is never wrong.
+/// Nicknames and epithets are given to Náutico and to its opponents in the 2026 Série B, the
+/// matches the case study follows. ``RadioPhrasebook`` alternates between club name and nickname
+/// the way radio commentary does, so a wrong nickname would be broadcast as fact: each one here
+/// is the form the sports press uses for that club, and clubs outside that season keep only
+/// their name, which is never wrong.
+///
+/// Every sentence puts the masculine article before the club ("do Náutico", "pelo Tigre"), so
+/// only forms that take it are listed. Ponte Preta is left with its name alone for that reason:
+/// its nickname, "Macaca", is feminine, and so is the club's own name, which the narration
+/// already gets wrong. Fixing that needs grammatical gender in the domain, not an entry here.
 nonisolated enum ClubDirectory {
     private struct Entry {
         let name: String
@@ -71,6 +77,29 @@ nonisolated enum ClubDirectory {
         clubs[normalised(vendorName)] != nil
     }
 
+    // Clubs that two vendors spell differently, so the same entry answers to both keys.
+
+    private static let operario = Entry(
+        "Operário",
+        full: "Operário Ferroviário Esporte Clube",
+        nickname: "Fantasma",
+        epithets: ["time alvinegro"]
+    )
+
+    private static let atleticoGoianiense = Entry(
+        "Atlético Goianiense",
+        full: "Atlético Clube Goianiense",
+        nickname: "Dragão",
+        epithets: ["time rubro-negro"]
+    )
+
+    private static let fortaleza = Entry(
+        "Fortaleza",
+        full: "Fortaleza Esporte Clube",
+        nickname: "Leão",
+        epithets: ["time tricolor"]
+    )
+
     private static let clubs: [String: Entry] = [
         // MARK: The case study
         "nautico recife": Entry(
@@ -89,21 +118,39 @@ nonisolated enum ClubDirectory {
 
         // MARK: Série A
         "atletico-mg": Entry("Atlético Mineiro", full: "Clube Atlético Mineiro"),
-        "atletico goianiense": Entry("Atlético Goianiense", full: "Atlético Clube Goianiense"),
+        "atletico goianiense": atleticoGoianiense,
+        // Sportmonks abbreviates the state.
+        "atletico go": atleticoGoianiense,
         "atletico paranaense": Entry("Athletico Paranaense", full: "Club Athletico Paranaense"),
         "bahia": Entry("Bahia", full: "Esporte Clube Bahia"),
         "botafogo": Entry("Botafogo", full: "Botafogo de Futebol e Regatas"),
-        "ceara": Entry("Ceará", full: "Ceará Sporting Club"),
+        "ceara": Entry(
+            "Ceará",
+            full: "Ceará Sporting Club",
+            nickname: "Vozão",
+            epithets: ["time alvinegro"]
+        ),
         "corinthians": Entry("Corinthians", full: "Sport Club Corinthians Paulista"),
-        "criciuma": Entry("Criciúma", full: "Criciúma Esporte Clube"),
+        "criciuma": Entry(
+            "Criciúma",
+            full: "Criciúma Esporte Clube",
+            nickname: "Tigre",
+            epithets: ["time carvoeiro"]
+        ),
         "cruzeiro": Entry("Cruzeiro", full: "Cruzeiro Esporte Clube"),
-        "cuiaba": Entry("Cuiabá", full: "Cuiabá Esporte Clube"),
+        "cuiaba": Entry("Cuiabá", full: "Cuiabá Esporte Clube", nickname: "Dourado"),
         "flamengo": Entry("Flamengo", full: "Clube de Regatas do Flamengo"),
         "fluminense": Entry("Fluminense", full: "Fluminense Football Club"),
-        "fortaleza ec": Entry("Fortaleza", full: "Fortaleza Esporte Clube"),
+        "fortaleza ec": fortaleza,
+        // The plain spelling, as Sportmonks sends it.
+        "fortaleza": fortaleza,
         "gremio": Entry("Grêmio", full: "Grêmio Foot-Ball Porto Alegrense"),
         "internacional": Entry("Internacional", full: "Sport Club Internacional"),
-        "juventude": Entry("Juventude", full: "Esporte Clube Juventude"),
+        "juventude": Entry(
+            "Juventude",
+            full: "Esporte Clube Juventude",
+            epithets: ["time alviverde"]
+        ),
         "palmeiras": Entry("Palmeiras", full: "Sociedade Esportiva Palmeiras"),
         "rb bragantino": Entry("Bragantino", full: "Red Bull Bragantino"),
         "sao paulo": Entry("São Paulo", full: "São Paulo Futebol Clube"),
@@ -111,33 +158,69 @@ nonisolated enum ClubDirectory {
         "vitoria": Entry("Vitória", full: "Esporte Clube Vitória"),
 
         // MARK: Série B
-        "america mineiro": Entry("América Mineiro", full: "América Futebol Clube"),
+        "america mineiro": Entry(
+            "América Mineiro",
+            full: "América Futebol Clube",
+            nickname: "Coelho",
+            epithets: ["time alviverde"]
+        ),
         "amazonas": Entry("Amazonas", full: "Amazonas Futebol Clube"),
-        "avai": Entry("Avaí", full: "Avaí Futebol Clube"),
-        "botafogo sp": Entry("Botafogo de Ribeirão Preto"),
+        "avai": Entry("Avaí", full: "Avaí Futebol Clube", nickname: "Leão"),
+        "botafogo sp": Entry(
+            "Botafogo de Ribeirão Preto",
+            nickname: "Pantera",
+            epithets: ["time tricolor"]
+        ),
         "brusque": Entry("Brusque", full: "Brusque Futebol Clube"),
         "chapecoense-sc": Entry("Chapecoense", full: "Associação Chapecoense de Futebol"),
         "coritiba": Entry("Coritiba", full: "Coritiba Foot Ball Club"),
-        "crb": Entry("CRB", full: "Clube de Regatas Brasil"),
+        "crb": Entry(
+            "CRB",
+            full: "Clube de Regatas Brasil",
+            nickname: "Galo",
+            epithets: ["time regatiano"]
+        ),
         "csa": Entry("CSA", full: "Centro Sportivo Alagoano"),
-        "goias": Entry("Goiás", full: "Goiás Esporte Clube"),
+        "goias": Entry(
+            "Goiás",
+            full: "Goiás Esporte Clube",
+            nickname: "Verdão",
+            epithets: ["time esmeraldino"]
+        ),
         "guarani campinas": Entry("Guarani", full: "Guarani Futebol Clube"),
         "ituano": Entry("Ituano", full: "Ituano Futebol Clube"),
-        "londrina": Entry("Londrina", full: "Londrina Esporte Clube"),
+        "londrina": Entry(
+            "Londrina",
+            full: "Londrina Esporte Clube",
+            nickname: "Tubarão",
+            epithets: ["time alviceleste"]
+        ),
         "mirassol": Entry("Mirassol", full: "Mirassol Futebol Clube"),
-        "novorizontino": Entry("Novorizontino", full: "Grêmio Novorizontino"),
-        "operario-pr": Entry("Operário", full: "Operário Ferroviário Esporte Clube"),
+        "novorizontino": Entry(
+            "Novorizontino",
+            full: "Grêmio Novorizontino",
+            nickname: "Tigre",
+            epithets: ["time aurinegro"]
+        ),
+        "operario-pr": operario,
+        // Sportmonks drops the hyphen.
+        "operario pr": operario,
         "paysandu": Entry("Paysandu", full: "Paysandu Sport Club"),
         "ponte preta": Entry("Ponte Preta", full: "Associação Atlética Ponte Preta"),
         "sampaio correa": Entry("Sampaio Corrêa", full: "Sampaio Corrêa Futebol Clube"),
-        "sport recife": Entry("Sport", full: "Sport Club do Recife"),
+        "sport recife": Entry(
+            "Sport",
+            full: "Sport Club do Recife",
+            nickname: "Leão",
+            epithets: ["time rubro-negro"]
+        ),
         "tombense": Entry("Tombense", full: "Tombense Futebol Clube"),
-        "vila nova": Entry("Vila Nova", full: "Vila Nova Futebol Clube"),
+        "vila nova": Entry("Vila Nova", full: "Vila Nova Futebol Clube", nickname: "Colorado"),
 
         // MARK: Série C
         "abc": Entry("ABC", full: "ABC Futebol Clube"),
         "aparecidense": Entry("Aparecidense", full: "Associação Atlética Aparecidense"),
-        "athletic club": Entry("Athletic Club"),
+        "athletic club": Entry("Athletic Club", nickname: "Esquadrão de Aço"),
         "botafogo pb": Entry("Botafogo da Paraíba"),
         "caxias": Entry("Caxias", full: "Sociedade Esportiva e Recreativa Caxias do Sul"),
         "confianca": Entry("Confiança", full: "Associação Desportiva Confiança"),
@@ -146,7 +229,12 @@ nonisolated enum ClubDirectory {
         "figueirense": Entry("Figueirense", full: "Figueirense Futebol Clube"),
         "floresta": Entry("Floresta", full: "Floresta Esporte Clube"),
         "remo": Entry("Remo", full: "Clube do Remo"),
-        "sao bernardo": Entry("São Bernardo", full: "São Bernardo Futebol Clube"),
+        "sao bernardo": Entry(
+            "São Bernardo",
+            full: "São Bernardo Futebol Clube",
+            nickname: "Tigre",
+            epithets: ["time aurinegro"]
+        ),
         "sao jose": Entry("São José"),
         "santos": Entry("Santos", full: "Santos Futebol Clube"),
         "volta redonda": Entry("Volta Redonda", full: "Volta Redonda Futebol Clube"),
