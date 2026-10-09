@@ -31,6 +31,13 @@ nonisolated struct Team: Identifiable, Hashable, Sendable {
     /// missing from the provider response.
     let crestURL: URL?
 
+    /// Descriptive phrases a commentator uses in place of the name. E.g. "time alvirrubro".
+    ///
+    /// Kept apart from ``nickname`` because they only work after a preposition: "falta do time
+    /// alvirrubro" is radio, while "time alvirrubro 2, CRB 1" is not. Empty for most clubs, for
+    /// the same reason nicknames are sparse: a wrong one would be broadcast as fact.
+    var epithets: [String] = []
+
     /// Names the club may be referred to by, in descending order of formality.
     ///
     /// Used to vary how a side is mentioned across a long broadcast without repeating one form.

@@ -346,17 +346,23 @@ nonisolated private extension TemplateNarrationEngine {
     // Corners, fouls and offsides are kept to a few words and carry no time reference. They
     // happen dozens of times a match and are narrated as they happen, so a long sentence would
     // still be playing when the next one arrives.
-    //
-    // The club is always called by its name here, never by its nickname. A foul and the sentence
-    // that later names its players are two separate events, and "Falta do Timbu" followed by
-    // "A falta do Náutico foi de Betão" would sound like two different sides.
+
+    /// How to refer to a side in a short play: its name, its nickname or one of its epithets.
+    ///
+    /// Wider than ``spokenName(of:for:)`` because every sentence here puts the side after a
+    /// preposition, which is the one position an epithet works in. A foul and the sentence that
+    /// later names its players may well pick different forms, "falta do Náutico" and then "a
+    /// falta cometida pelo time alvirrubro", and that is how radio commentary sounds.
+    func playName(of team: Team, for event: MatchEvent) -> String {
+        pick(team.spokenNames + team.epithets, for: event, salt: "play-\(team.id)")
+    }
 
     func cornerSentence(for event: MatchEvent) -> String {
-        "Escanteio para o \(event.team.shortName)."
+        "Escanteio para o \(playName(of: event.team, for: event))."
     }
 
     func foulSentence(for event: MatchEvent) -> String {
-        let team = event.team.shortName
+        let team = playName(of: event.team, for: event)
 
         switch (event.player, event.relatedPlayer) {
         case let (offender?, victim?):
@@ -371,7 +377,7 @@ nonisolated private extension TemplateNarrationEngine {
     }
 
     func offsideSentence(for event: MatchEvent) -> String {
-        let team = event.team.shortName
+        let team = playName(of: event.team, for: event)
 
         guard let player = event.player else { return "Impedimento do \(team)." }
 
@@ -383,15 +389,20 @@ nonisolated private extension TemplateNarrationEngine {
     // wondering which one.
 
     func foulAttributionSentence(for event: MatchEvent) -> String? {
-        let team = event.team.shortName
+        let team = playName(of: event.team, for: event)
+        let opening = pick(
+            ["A falta do \(team)", "A falta cometida pelo \(team)"],
+            for: event,
+            salt: "opening"
+        )
 
         switch (event.player, event.relatedPlayer) {
         case let (offender?, victim?):
-            return "A falta do \(team) foi de \(offender), em \(victim)."
+            return "\(opening) foi de \(offender), em \(victim)."
         case let (offender?, nil):
-            return "A falta do \(team) foi de \(offender)."
+            return "\(opening) foi de \(offender)."
         case let (nil, victim?):
-            return "A falta do \(team) foi em \(victim)."
+            return "\(opening) foi em \(victim)."
         case (nil, nil):
             return nil
         }
@@ -400,7 +411,7 @@ nonisolated private extension TemplateNarrationEngine {
     func offsideAttributionSentence(for event: MatchEvent) -> String? {
         guard let player = event.player else { return nil }
 
-        return "O impedimento do \(event.team.shortName) foi de \(player)."
+        return "O impedimento do \(playName(of: event.team, for: event)) foi de \(player)."
     }
 
     func goalSentence(for event: MatchEvent, in match: Match) -> String {
