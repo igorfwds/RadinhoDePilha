@@ -95,9 +95,10 @@ nonisolated struct SportmonksProvider: MatchDataProvider {
 
     /// Fetches a fixture with its running totals, falling back to the plain request.
     ///
-    /// The totals are an addition, and the narration of goals must not depend on them. If the
-    /// richer request fails for any reason, say a plan that does not include the statistics, the
-    /// plain one is used from then on for the rest of the session.
+    /// The totals are an addition, and the narration of goals must not depend on them: whenever
+    /// the richer request fails, the plain one answers this poll. Only a failure that would recur
+    /// on every attempt, see ``shouldStopRequestingTotals(after:)``, ends the richer request for
+    /// the rest of the session.
     private func fixture(withID id: String) async throws -> SportmonksFixture? {
         let plain = [URLQueryItem(name: "include", value: Self.includes)]
 
@@ -114,9 +115,30 @@ nonisolated struct SportmonksProvider: MatchDataProvider {
                 ]
             )
         } catch {
-            await plays.stopRequestingTotals()
+            if Self.shouldStopRequestingTotals(after: error) {
+                await plays.stopRequestingTotals()
+            }
 
             return try await get(path: "fixtures/\(id)", query: plain)
+        }
+    }
+
+    /// Whether a failure of the richer request would recur on every attempt.
+    ///
+    /// The same line the recorder draws. A refusal, or totals that cannot be read, means the plan
+    /// or the format does not allow them, and asking again would only double every poll. No
+    /// answer, an exhausted hourly allowance or a vendor outage says nothing about the request
+    /// and passes. Treating those as final once switched corners and fouls off for ten minutes of
+    /// a live match, after a twenty-second drop in the stadium's connection, until the app was
+    /// reopened.
+    static func shouldStopRequestingTotals(after error: Error) -> Bool {
+        switch error as? MatchDataError {
+        case .unauthorized, .decoding:
+            true
+        case .providerFailure(let status):
+            !(500...599).contains(status)
+        case .network, .quotaExceeded, .matchNotFound, nil:
+            false
         }
     }
 
