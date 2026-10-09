@@ -18,8 +18,8 @@ import Foundation
 /// Nicknames and epithets are given to Náutico and to its opponents in the 2026 Série B, the
 /// matches the case study follows. ``RadioPhrasebook`` alternates between club name and nickname
 /// the way radio commentary does, so a wrong nickname would be broadcast as fact: each one here
-/// is the form the sports press uses for that club, and clubs outside that season keep only
-/// their name, which is never wrong.
+/// was checked against the nicknames listed for the club on the Portuguese-language Wikipedia in
+/// October 2026, and clubs outside that season keep only their name, which is never wrong.
 ///
 /// Every sentence puts the masculine article before the club ("do Náutico", "pelo Tigre"), so
 /// only forms that take it are listed. Ponte Preta is left with its name alone for that reason:
@@ -96,8 +96,8 @@ nonisolated enum ClubDirectory {
     private static let fortaleza = Entry(
         "Fortaleza",
         full: "Fortaleza Esporte Clube",
-        nickname: "Leão",
-        epithets: ["time tricolor"]
+        nickname: "Leão do Pici",
+        epithets: ["time tricolor", "Tricolor de Aço"]
     )
 
     private static let clubs: [String: Entry] = [
@@ -128,7 +128,7 @@ nonisolated enum ClubDirectory {
             "Ceará",
             full: "Ceará Sporting Club",
             nickname: "Vozão",
-            epithets: ["time alvinegro"]
+            epithets: ["time alvinegro", "Vovô"]
         ),
         "corinthians": Entry("Corinthians", full: "Sport Club Corinthians Paulista"),
         "criciuma": Entry(
@@ -138,7 +138,12 @@ nonisolated enum ClubDirectory {
             epithets: ["time carvoeiro"]
         ),
         "cruzeiro": Entry("Cruzeiro", full: "Cruzeiro Esporte Clube"),
-        "cuiaba": Entry("Cuiabá", full: "Cuiabá Esporte Clube", nickname: "Dourado"),
+        "cuiaba": Entry(
+            "Cuiabá",
+            full: "Cuiabá Esporte Clube",
+            nickname: "Dourado",
+            epithets: ["time auriverde"]
+        ),
         "flamengo": Entry("Flamengo", full: "Clube de Regatas do Flamengo"),
         "fluminense": Entry("Fluminense", full: "Fluminense Football Club"),
         "fortaleza ec": fortaleza,
@@ -149,6 +154,7 @@ nonisolated enum ClubDirectory {
         "juventude": Entry(
             "Juventude",
             full: "Esporte Clube Juventude",
+            nickname: "Papo",
             epithets: ["time alviverde"]
         ),
         "palmeiras": Entry("Palmeiras", full: "Sociedade Esportiva Palmeiras"),
@@ -161,11 +167,10 @@ nonisolated enum ClubDirectory {
         "america mineiro": Entry(
             "América Mineiro",
             full: "América Futebol Clube",
-            nickname: "Coelho",
-            epithets: ["time alviverde"]
+            nickname: "Coelho"
         ),
         "amazonas": Entry("Amazonas", full: "Amazonas Futebol Clube"),
-        "avai": Entry("Avaí", full: "Avaí Futebol Clube", nickname: "Leão"),
+        "avai": Entry("Avaí", full: "Avaí Futebol Clube", nickname: "Leão da Ilha"),
         "botafogo sp": Entry(
             "Botafogo de Ribeirão Preto",
             nickname: "Pantera",
@@ -178,7 +183,7 @@ nonisolated enum ClubDirectory {
             "CRB",
             full: "Clube de Regatas Brasil",
             nickname: "Galo",
-            epithets: ["time regatiano"]
+            epithets: ["time regatiano", "Galo da Praia"]
         ),
         "csa": Entry("CSA", full: "Centro Sportivo Alagoano"),
         "goias": Entry(
@@ -199,7 +204,7 @@ nonisolated enum ClubDirectory {
         "novorizontino": Entry(
             "Novorizontino",
             full: "Grêmio Novorizontino",
-            nickname: "Tigre",
+            nickname: "Tigre do Vale",
             epithets: ["time aurinegro"]
         ),
         "operario-pr": operario,
@@ -211,16 +216,25 @@ nonisolated enum ClubDirectory {
         "sport recife": Entry(
             "Sport",
             full: "Sport Club do Recife",
-            nickname: "Leão",
-            epithets: ["time rubro-negro"]
+            nickname: "Leão da Ilha",
+            epithets: ["time rubro-negro", "Leão do Norte"]
         ),
         "tombense": Entry("Tombense", full: "Tombense Futebol Clube"),
-        "vila nova": Entry("Vila Nova", full: "Vila Nova Futebol Clube", nickname: "Colorado"),
+        "vila nova": Entry(
+            "Vila Nova",
+            full: "Vila Nova Futebol Clube",
+            nickname: "Tigrão",
+            epithets: ["time colorado"]
+        ),
 
         // MARK: Série C
         "abc": Entry("ABC", full: "ABC Futebol Clube"),
         "aparecidense": Entry("Aparecidense", full: "Associação Atlética Aparecidense"),
-        "athletic club": Entry("Athletic Club", nickname: "Esquadrão de Aço"),
+        "athletic club": Entry(
+            "Athletic Club",
+            nickname: "Esquadrão de Aço",
+            epithets: ["time alvinegro"]
+        ),
         "botafogo pb": Entry("Botafogo da Paraíba"),
         "caxias": Entry("Caxias", full: "Sociedade Esportiva e Recreativa Caxias do Sul"),
         "confianca": Entry("Confiança", full: "Associação Desportiva Confiança"),
@@ -232,7 +246,7 @@ nonisolated enum ClubDirectory {
         "sao bernardo": Entry(
             "São Bernardo",
             full: "São Bernardo Futebol Clube",
-            nickname: "Tigre",
+            nickname: "Tigre do ABC",
             epithets: ["time aurinegro"]
         ),
         "sao jose": Entry("São José"),
