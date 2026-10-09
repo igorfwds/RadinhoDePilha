@@ -329,11 +329,11 @@ nonisolated private extension TemplateNarrationEngine {
         case .corner:
             cornerSentence(for: event)
         case .foul:
-            foulSentence(for: event)
+            foulSentence(for: event, in: match)
         case .offside:
             offsideSentence(for: event)
         case .foulAttribution:
-            foulAttributionSentence(for: event)
+            foulAttributionSentence(for: event, in: match)
         case .offsideAttribution:
             offsideAttributionSentence(for: event)
         case .unknown:
@@ -357,20 +357,30 @@ nonisolated private extension TemplateNarrationEngine {
         pick(team.spokenNames + team.epithets, for: event, salt: "play-\(team.id)")
     }
 
+    /// The player a foul was committed on, with the side he plays for.
+    ///
+    /// Said with the side because the listener has just heard the other one named as the
+    /// offender, and a bare surname leaves them to work out that he is an opponent.
+    func victim(_ name: String, of event: MatchEvent, in match: Match) -> String {
+        let opponent = event.team.id == match.homeTeam.id ? match.awayTeam : match.homeTeam
+
+        return "\(name), do \(playName(of: opponent, for: event))"
+    }
+
     func cornerSentence(for event: MatchEvent) -> String {
         "Escanteio para o \(playName(of: event.team, for: event))."
     }
 
-    func foulSentence(for event: MatchEvent) -> String {
+    func foulSentence(for event: MatchEvent, in match: Match) -> String {
         let team = playName(of: event.team, for: event)
 
         switch (event.player, event.relatedPlayer) {
-        case let (offender?, victim?):
-            return "Falta do \(team). \(offender) em \(victim)."
+        case let (offender?, suffered?):
+            return "Falta do \(team). \(offender) em \(victim(suffered, of: event, in: match))."
         case let (offender?, nil):
             return "Falta do \(team), de \(offender)."
-        case let (nil, victim?):
-            return "Falta do \(team) em \(victim)."
+        case let (nil, suffered?):
+            return "Falta do \(team) em \(victim(suffered, of: event, in: match))."
         case (nil, nil):
             return "Falta do \(team)."
         }
@@ -388,7 +398,7 @@ nonisolated private extension TemplateNarrationEngine {
     // because up to a minute may have passed, and "essa falta" alone would leave the listener
     // wondering which one.
 
-    func foulAttributionSentence(for event: MatchEvent) -> String? {
+    func foulAttributionSentence(for event: MatchEvent, in match: Match) -> String? {
         let team = playName(of: event.team, for: event)
         let opening = pick(
             ["A falta do \(team)", "A falta cometida pelo \(team)"],
@@ -397,12 +407,12 @@ nonisolated private extension TemplateNarrationEngine {
         )
 
         switch (event.player, event.relatedPlayer) {
-        case let (offender?, victim?):
-            return "\(opening) foi de \(offender), em \(victim)."
+        case let (offender?, suffered?):
+            return "\(opening) foi de \(offender), em \(victim(suffered, of: event, in: match))."
         case let (offender?, nil):
             return "\(opening) foi de \(offender)."
-        case let (nil, victim?):
-            return "\(opening) foi em \(victim)."
+        case let (nil, suffered?):
+            return "\(opening) foi em \(victim(suffered, of: event, in: match))."
         case (nil, nil):
             return nil
         }

@@ -253,7 +253,7 @@ struct SportmonksPlayDerivationTests {
         let text = try #require(TemplateNarrationEngine().narrate(attribution, in: match)?.text)
 
         #expect(text.hasPrefix("A falta "))
-        #expect(text.hasSuffix(" foi de Wanderson, em Ribamar."))
+        #expect(text.hasSuffix(" foi de Wanderson, em Ribamar, do CRB."))
     }
 
     // MARK: - Narration
@@ -272,7 +272,7 @@ struct SportmonksPlayDerivationTests {
 
         // The side may be called by its name or its nickname, so only the fixed parts are checked.
         #expect(text.hasPrefix("Falta do "))
-        #expect(text.hasSuffix(". Wanderson em Ribamar."))
+        #expect(text.hasSuffix(". Wanderson em Ribamar, do CRB."))
     }
 
     @Test("Frequent plays carry no sound or vibration")
