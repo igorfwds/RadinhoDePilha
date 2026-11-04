@@ -1,0 +1,87 @@
+/* Shared style for the formal-session documents.
+ *
+ * Two modes, chosen by the class on <body>:
+ *   grande   what the participant receives: large type, generous spacing
+ *   tecnico  what stays with the researcher: denser, for scripts and forms
+ *
+ * Black on white throughout, and no meaning carried by colour alone, since the people who read
+ * these documents may have low vision.
+ */
+
+html {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  color: #000;
+  background: #fff;
+}
+
+body { margin: 0; }
+body.grande { font-size: 16pt; line-height: 1.5; }
+body.tecnico { font-size: 11.5pt; line-height: 1.4; }
+
+h1 { font-size: 1.55em; line-height: 1.2; margin: 0 0 0.35em; }
+h2 { font-size: 1.2em; line-height: 1.25; margin: 1.2em 0 0.3em; break-after: avoid; page-break-after: avoid; }
+h3 { font-size: 1.05em; margin: 0.9em 0 0.2em; break-after: avoid; page-break-after: avoid; }
+
+p { margin: 0.4em 0 0.65em; }
+ul, ol { margin: 0.3em 0 0.75em 1.3em; padding: 0; }
+li { margin: 0.25em 0; }
+
+.sub { font-size: 1em; margin: 0 0 0.8em; }
+.pequeno { font-size: 0.85em; }
+
+/* Text the researcher reads aloud, word for word. */
+.leia {
+  border-left: 4px solid #000;
+  padding-left: 10pt;
+  margin: 0.6em 0 0.9em;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* A framed note. */
+.caixa {
+  border: 1.5px solid #000;
+  padding: 8pt 10pt;
+  margin: 0.8em 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+table { border-collapse: collapse; width: 100%; margin: 0.6em 0 1em; }
+th, td { border: 1px solid #000; padding: 5pt 6pt; vertical-align: top; text-align: left; }
+th { background: #e6e6e6; }
+tr { break-inside: avoid; page-break-inside: avoid; }
+
+/* Tables meant to be written in by hand: room for a line of handwriting per row. */
+table.preencher td { height: 34pt; }
+table.compacta td { height: 24pt; }
+
+/* Starts a new page. Used instead of trusting rows not to split, which print does not honour. */
+.nova-pagina { break-before: page; page-break-before: always; }
+
+/* One task, one block: never split across pages. */
+.tarefa {
+  border: 1px solid #000;
+  padding: 7pt 10pt 3pt;
+  margin: 0.9em 0;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.tarefa h3 { margin-top: 0; }
+
+.nobreak { break-inside: avoid; page-break-inside: avoid; }
+
+/* Blank to be filled in by hand. */
+.linha {
+  display: inline-block;
+  border-bottom: 1px solid #000;
+  min-width: 12em;
+  height: 1em;
+}
+.linha.longa { min-width: 22em; }
+.espaco { border-bottom: 1px solid #000; height: 1.9em; }
+
+/* Checkbox options, one per line. */
+.opcoes { list-style: none; margin-left: 0.2em; }
+.opcoes li { padding-left: 1.7em; text-indent: -1.7em; }
+.opcoes li::before { content: "\2610\00a0\00a0"; }

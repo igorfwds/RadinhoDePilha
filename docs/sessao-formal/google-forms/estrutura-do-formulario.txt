@@ -1,0 +1,230 @@
+Radinho de Pilha: como foi usar o aplicativo?
+=============================================
+
+Configuração: sem coleta de e-mail, sem login, sem limite de uma resposta por pessoa, sem edição depois de enviar, sem resumo público.
+Total: 33 perguntas, 25 obrigatórias, 10 seções.
+
+INTRODUÇÃO (primeira página)
+Este formulário faz parte de uma pesquisa de Trabalho de Conclusão de Curso da CESAR School sobre um aplicativo de iPhone que narra partidas de futebol por voz, o Radinho de Pilha.
+
+Pesquisador: Igor Felipe Wanderley da Silva. Orientador: Prof. Me. Marcelo Lima Arcoverde.
+
+Leva de 10 a 20 minutos, conforme quanto você queira escrever. Não existe resposta certa ou errada: quem está sendo avaliado é o aplicativo, não você. Se não lembrar de algo, pode pular as perguntas que não forem obrigatórias.
+
+O formulário é anônimo. Não pedimos nome, e-mail nem telefone, e ele não registra quem respondeu. Por isso, depois de enviar, não será possível apagar uma resposta específica, porque não há como saber qual é a sua. Por favor, não escreva seu nome nem dados que identifiquem você nas respostas escritas.
+
+Participar é voluntário. Você pode parar a qualquer momento, fechando a página: só as respostas enviadas ficam registradas. As respostas ficam guardadas no Google Forms, na conta do pesquisador, e serão usadas somente nesta pesquisa, de acordo com a Lei Geral de Proteção de Dados (Lei nº 13.709, de 2018).
+
+
+1. Consentimento  [obrigatória]
+   Tipo: Caixas de seleção
+   Ajuda: Para responder, leia as informações acima e marque a caixa.
+   - Li as informações acima e concordo em participar
+
+--- SOBRE O JOGO E O USO ---
+Responda sobre o jogo em que você usou o aplicativo. Se usou em mais de um, escolha o que lembra melhor.
+
+2. Qual jogo você acompanhou com o aplicativo?  [obrigatória]
+   Tipo: Texto curto
+   Ajuda: Escreva os dois times, a data, ou os dois. Exemplo: Náutico x Novorizontino, 08/10.
+
+3. Onde você estava?  [obrigatória]
+   Tipo: Múltipla escolha
+   - No estádio
+   - Em casa, com a TV ligada
+   - Em casa, só com o aplicativo
+   - Outro (a pessoa escreve)
+
+4. Quanto tempo você usou o aplicativo nesse jogo?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Menos de 15 minutos
+   - De 15 a 45 minutos
+   - De 45 a 90 minutos
+   - O jogo todo
+
+5. Você estava usando o VoiceOver, o leitor de tela do iPhone, enquanto usava o aplicativo?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Sim
+   - Não
+
+--- SOBRE VOCÊ ---
+Estas duas perguntas são opcionais e servem só para entender o conjunto das respostas. Não pedimos idade, cidade nem nome.
+
+6. Como você descreveria sua condição visual?
+   Tipo: Múltipla escolha
+   - Cegueira
+   - Baixa visão
+   - Outro (a pessoa escreve)
+
+7. Com que frequência você usa o VoiceOver no dia a dia?
+   Tipo: Múltipla escolha
+   - Todos os dias
+   - Algumas vezes por semana
+   - Raramente
+   - Não uso
+
+--- O QUE VOCÊ CONSEGUIU FAZER ---
+Pense na primeira vez que usou o aplicativo. Para cada coisa abaixo, diga como foi.
+
+8. Fazer o aplicativo começar a narrar o jogo.  [obrigatória]
+   Tipo: Múltipla escolha
+   - Consegui sozinho(a)
+   - Consegui com dificuldade
+   - Não consegui
+   - Não usei
+
+9. Saber o placar e ouvir os lances mais recentes ou o resumo do jogo.  [obrigatória]
+   Tipo: Múltipla escolha
+   - Consegui sozinho(a)
+   - Consegui com dificuldade
+   - Não consegui
+   - Não usei
+
+10. Ouvir um lance de novo.  [obrigatória]
+   Tipo: Múltipla escolha
+   - Consegui sozinho(a)
+   - Consegui com dificuldade
+   - Não consegui
+   - Não usei
+
+11. Mudar os ajustes: a velocidade da voz, a voz, o estilo do narrador, e ligar ou desligar os sons e as vibrações.  [obrigatória]
+   Tipo: Múltipla escolha
+   - Consegui sozinho(a)
+   - Consegui com dificuldade
+   - Não consegui
+   - Não usei
+
+12. Entender os sons e as vibrações que avisam cada lance.  [obrigatória]
+   Tipo: Múltipla escolha
+   - Consegui sozinho(a)
+   - Consegui com dificuldade
+   - Não consegui
+   - Não usei
+
+--- O QUE VOCÊ ENTENDEU DO JOGO ---
+Responda de memória, sem consultar nada. Se não lembrar, pode pular.
+
+13. Quanto ficou o jogo no fim, ou na última vez que você ouviu?
+   Tipo: Texto curto
+
+14. Quem fez os gols? Houve cartões? Para quem?
+   Tipo: Texto longo
+
+15. Alguma vez você ficou sabendo de um lance por outro meio, como a TV, a torcida ou alguém ao seu lado, antes de o aplicativo contar?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Nunca
+   - Poucas vezes
+   - Muitas vezes
+   - Quase sempre
+
+--- INFORMAÇÕES E ATRASO ---
+
+16. De que tipo de informação você sentiu falta?
+   Tipo: Caixas de seleção
+   Ajuda: Marque quantas opções quiser.
+   - Quem cometeu a falta
+   - Quem sofreu a falta
+   - Jogador caído ou machucado
+   - Escanteios
+   - Impedimentos
+   - Pênaltis
+   - Substituições
+   - Cartões
+   - Não senti falta de nada
+   - Outro (a pessoa escreve)
+
+17. O atraso do aplicativo atrapalhou?  [obrigatória]
+   Tipo: Escala (de 1 a 5: Não atrapalhou ... Atrapalhou muito)
+
+18. Quando um jogador ficou caído, o aplicativo ajudou a saber quem era?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Sim, sempre
+   - Às vezes
+   - Não ajudou
+   - Isso não aconteceu enquanto usei
+
+--- SONS E VIBRAÇÕES ---
+Antes de cada lance, o aplicativo toca um som e faz uma vibração.
+
+19. Você conseguiu perceber que tipo de lance era só pelos sons e pelas vibrações?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Sim, quase sempre
+   - Alguns eu conseguia
+   - Não consegui
+   - Desliguei os sons e as vibrações
+
+20. Pelos sons e pelas vibrações, você conseguiu saber se o lance era do seu time ou do adversário?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Sim
+   - Às vezes
+   - Não
+   - Não tenho time
+
+21. Os sons e as vibrações atrapalharam em algum momento?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Não
+   - Poucas vezes
+   - Muitas vezes
+
+--- VOZ E NARRAÇÃO ---
+
+22. Qual estilo de narrador você usou?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Clássico
+   - Torcedor
+   - Analítico
+   - Não mudei o estilo
+   - Não lembro
+
+23. A velocidade da voz era:  [obrigatória]
+   Tipo: Múltipla escolha
+   - Muito lenta
+   - Boa
+   - Muito rápida
+
+24. Você acha que essa voz cansaria em um jogo inteiro?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Sim
+   - Talvez
+   - Não
+
+--- CONEXÃO COM A INTERNET ---
+
+25. Durante o jogo, o aplicativo perdeu a conexão com a internet?  [obrigatória]
+   Tipo: Múltipla escolha
+   - Sim
+   - Não
+   - Não sei
+
+26. Se perdeu, o que você entendeu na hora e o que fez?
+   Tipo: Texto longo
+
+--- NO GERAL ---
+Diga o quanto você concorda com cada frase, de 1 a 5.
+
+27. Consegui usar o aplicativo sem ajuda.  [obrigatória]
+   Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
+
+28. Entendi o que aconteceu no jogo.  [obrigatória]
+   Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
+
+29. Os sons e as vibrações me ajudaram.  [obrigatória]
+   Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
+
+30. Confiei nas informações que ouvi.  [obrigatória]
+   Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
+
+31. Eu usaria o aplicativo em um jogo de verdade.  [obrigatória]
+   Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
+
+--- PARA TERMINAR ---
+Não escreva seu nome.
+
+32. O que você mudaria primeiro no aplicativo?
+   Tipo: Texto longo
+
+33. Quer contar mais alguma coisa?
+   Tipo: Texto longo
+
+MENSAGEM FINAL
+Obrigado por participar! Suas respostas foram enviadas.
