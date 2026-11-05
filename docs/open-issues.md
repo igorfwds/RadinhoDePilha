@@ -67,8 +67,9 @@ was designed for. To be asked in the post-use questionnaire before choosing a st
 
 `AVSpeechService` plays the signal of each narration as it speaks it, and there is no setting
 that turns the voice off while keeping the text and the vibration. A deaf or hard-of-hearing user
-cannot follow with the vibrations and the on-screen list alone, although both exist. Outside the
-scope of the evaluation; the way to support it would be a mode with text and vibration that does
+cannot follow with the vibrations and the on-screen list alone, although both exist. The vibrations cover only goals, cards, substitutions, missed penalties,
+VAR decisions and whistles; corners, fouls and offsides have no signal, because they are too
+frequent to signal. Outside the scope of the evaluation; the way to support it would be a mode with text and vibration that does
 not depend on the speech service.
 
 ## Installing on participants' devices
