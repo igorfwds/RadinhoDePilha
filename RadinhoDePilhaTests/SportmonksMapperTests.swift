@@ -5,6 +5,62 @@ import Testing
 /// Anchor for locating the test bundle, as in ``APIFootballMapperTests``.
 private final class SportmonksFixtureLocator {}
 
+/// One clock reading and the stoppage it should be read as.
+nonisolated struct StoppageCase: Sendable, CustomTestStringConvertible {
+    let name: String
+    let periods: [SportmonksPeriod]
+    let expected: Int?
+
+    var testDescription: String { name }
+}
+
+nonisolated let stoppageCases = [
+    StoppageCase(
+        name: "first half at 47 minutes",
+        periods: [
+            SportmonksPeriod(sortOrder: 1, ticking: true, countsFrom: 0, periodLength: 45, minutes: 47)
+        ],
+        expected: 2
+    ),
+    StoppageCase(
+        name: "second half at 92 minutes",
+        periods: [
+            SportmonksPeriod(sortOrder: 1, ticking: false, countsFrom: 0, periodLength: 45, minutes: 45),
+            SportmonksPeriod(sortOrder: 2, ticking: true, countsFrom: 45, periodLength: 45, minutes: 92)
+        ],
+        expected: 2
+    ),
+    StoppageCase(
+        name: "extra time at 107 minutes",
+        periods: [
+            SportmonksPeriod(sortOrder: 3, ticking: true, countsFrom: 90, periodLength: 15, minutes: 107)
+        ],
+        expected: 2
+    ),
+    StoppageCase(
+        name: "inside regulation",
+        periods: [
+            SportmonksPeriod(sortOrder: 1, ticking: true, countsFrom: 0, periodLength: 45, minutes: 43)
+        ],
+        expected: nil
+    ),
+    StoppageCase(
+        name: "exactly at the end of the half",
+        periods: [
+            SportmonksPeriod(sortOrder: 1, ticking: true, countsFrom: 0, periodLength: 45, minutes: 45)
+        ],
+        expected: nil
+    ),
+    StoppageCase(
+        name: "between the halves, with the clock stopped",
+        periods: [
+            SportmonksPeriod(sortOrder: 1, ticking: false, countsFrom: 0, periodLength: 45, minutes: 48)
+        ],
+        expected: nil
+    ),
+    StoppageCase(name: "no periods at all", periods: [], expected: nil)
+]
+
 /// Tests the Sportmonks adapter against a response actually returned by the vendor.
 ///
 /// The payload in `Fixtures/` is Celtic 0×1 Rangers, Scottish Premiership, 20 September 2026,
@@ -182,6 +238,11 @@ struct SportmonksMapperTests {
         #expect(match.elapsedMinutes == 45)
         // Only the kick-off: no end of the first half, no start of the second.
         #expect(match.events.map(\.kind) == [.periodStart])
+    }
+
+    @Test("Stoppage is what is played past the end of the half", arguments: stoppageCases)
+    func stoppageIsThePlayPastTheEndOfTheHalf(_ testCase: StoppageCase) {
+        #expect(SportmonksMapper.stoppageMinutes(from: testCase.periods) == testCase.expected)
     }
 
     @Test("Half-time closes the first half without opening the second")

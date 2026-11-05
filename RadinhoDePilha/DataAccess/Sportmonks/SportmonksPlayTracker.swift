@@ -19,9 +19,17 @@ nonisolated struct SportmonksCounters: Equatable, Sendable {
     var playerNames: [Int: String] = [:]
     var playerSides: [Int: Side] = [:]
 
+    /// Minutes played past the end of the half, when the response was taken in stoppage time.
+    ///
+    /// Kept with the totals because the plays are placed in time by the response that reveals
+    /// them, and the match's own clock stops at the end of the half.
+    var stoppageMinute: Int?
+
     init() {}
 
     init(fixture: SportmonksFixture) {
+        stoppageMinute = SportmonksMapper.stoppageMinutes(from: fixture.periods ?? [])
+
         // Sides come from the participants' own `location`, never from identifiers: the domain
         // may rename or renumber a club, and the totals must still land on the right side.
         var sides: [Int: Side] = [:]
@@ -123,6 +131,7 @@ nonisolated struct SportmonksPlayLedger: Sendable {
     /// A play already narrated without names, waiting for them.
     nonisolated private struct UnnamedPlay: Sendable {
         let minute: Int
+        let stoppageMinute: Int?
         let sequence: Int
         let narratedAt: Date
     }
@@ -240,7 +249,7 @@ nonisolated struct SportmonksPlayLedger: Sendable {
                 MatchEvent(
                     kind: kind == .foul ? .foulAttribution : .offsideAttribution,
                     minute: play.minute,
-                    stoppageMinute: nil,
+                    stoppageMinute: play.stoppageMinute,
                     team: team,
                     player: attribution.player,
                     relatedPlayer: attribution.relatedPlayer,
@@ -271,7 +280,12 @@ nonisolated struct SportmonksPlayLedger: Sendable {
                 earlyNames[key] = early
             } else if kind != .corner {
                 unnamed[key, default: []].append(
-                    UnnamedPlay(minute: minute, sequence: sequence, narratedAt: now)
+                    UnnamedPlay(
+                        minute: minute,
+                        stoppageMinute: new.stoppageMinute,
+                        sequence: sequence,
+                        narratedAt: now
+                    )
                 )
             }
 
@@ -279,7 +293,7 @@ nonisolated struct SportmonksPlayLedger: Sendable {
                 MatchEvent(
                     kind: kind,
                     minute: minute,
-                    stoppageMinute: nil,
+                    stoppageMinute: new.stoppageMinute,
                     team: team,
                     player: attribution?.player,
                     relatedPlayer: attribution?.relatedPlayer,

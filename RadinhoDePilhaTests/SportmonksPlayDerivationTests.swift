@@ -15,9 +15,11 @@ struct SportmonksPlayDerivationTests {
         homeOffsides: Int = 0,
         foulsCommitted: [Int: Int] = [:],
         foulsDrawn: [Int: Int] = [:],
-        offsides: [Int: Int] = [:]
+        offsides: [Int: Int] = [:],
+        stoppage: Int? = nil
     ) -> SportmonksCounters {
         var counters = SportmonksCounters()
+        counters.stoppageMinute = stoppage
         counters.teams[SportmonksPlayDerivation.corners] = [.home: homeCorners, .away: awayCorners]
         counters.teams[SportmonksPlayDerivation.fouls] = [.home: homeFouls, .away: awayFouls]
         counters.teams[SportmonksPlayDerivation.offsides] = [.home: homeOffsides, .away: 0]
@@ -122,6 +124,50 @@ struct SportmonksPlayDerivationTests {
     @Test("Events reported one by one keep the identifier they always had")
     func reportedEventsKeepTheirIdentifier() {
         #expect(match.events[1].id == "23|0|goal|crb|Ribamar")
+    }
+
+    // MARK: - Stoppage time
+
+    @Test("A play worked out in stoppage time carries the stoppage minute")
+    func playsInStoppageCarryTheStoppageMinute() {
+        let events = derive(
+            from: counters(awayCorners: 2, stoppage: 2),
+            to: counters(awayCorners: 3, stoppage: 2)
+        )
+
+        #expect(events.first?.stoppageMinute == 2)
+    }
+
+    @Test("A play worked out in regulation time has no stoppage minute")
+    func playsInRegulationHaveNoStoppageMinute() {
+        let events = derive(from: counters(awayCorners: 2), to: counters(awayCorners: 3))
+
+        #expect(events.first?.stoppageMinute == nil)
+    }
+
+    @Test("The names that follow a foul keep its stoppage minute, not the minute they arrived in")
+    func namesKeepTheStoppageOfTheirFoul() {
+        var ledger = SportmonksPlayLedger()
+        _ = ledger.advance(
+            to: counters(homeFouls: 3, foulsCommitted: [1: 1], stoppage: 1),
+            in: match,
+            at: start
+        )
+
+        let foul = ledger.advance(
+            to: counters(homeFouls: 4, foulsCommitted: [1: 1], stoppage: 1),
+            in: match,
+            at: start.addingTimeInterval(4)
+        )
+        let names = ledger.advance(
+            to: counters(homeFouls: 4, foulsCommitted: [1: 2], foulsDrawn: [3: 1], stoppage: 2),
+            in: match,
+            at: start.addingTimeInterval(35)
+        )
+
+        #expect(foul.first?.stoppageMinute == 1)
+        #expect(names.first?.kind == .foulAttribution)
+        #expect(names.first?.stoppageMinute == 1)
     }
 
     // MARK: - Names that arrive separately
