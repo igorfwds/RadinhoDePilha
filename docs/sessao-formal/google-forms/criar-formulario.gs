@@ -265,6 +265,7 @@ function addOverall_(form) {
     'Entendi o que aconteceu no jogo.',
     'Os sons e as vibrações me ajudaram.',
     'Confiei nas informações que ouvi.',
+    'A narração soou como a de um narrador de rádio, e não como uma leitura de dados.',
     'Eu usaria o aplicativo em um jogo de verdade.'
   ];
 

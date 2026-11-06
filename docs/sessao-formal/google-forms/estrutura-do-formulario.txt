@@ -214,16 +214,19 @@ Diga o quanto você concorda com cada frase, de 1 a 5.
 30. Confiei nas informações que ouvi.  [obrigatória]
    Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
 
-31. Eu usaria o aplicativo em um jogo de verdade.  [obrigatória]
+31. A narração soou como a de um narrador de rádio, e não como uma leitura de dados.  [obrigatória]
+   Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
+
+32. Eu usaria o aplicativo em um jogo de verdade.  [obrigatória]
    Tipo: Escala (de 1 a 5: Discordo totalmente ... Concordo totalmente)
 
 --- PARA TERMINAR ---
 Não escreva seu nome.
 
-32. O que você mudaria primeiro no aplicativo?
+33. O que você mudaria primeiro no aplicativo?
    Tipo: Texto longo
 
-33. Quer contar mais alguma coisa?
+34. Quer contar mais alguma coisa?
    Tipo: Texto longo
 
 MENSAGEM FINAL
