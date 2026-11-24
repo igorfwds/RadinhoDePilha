@@ -49,6 +49,14 @@ nonisolated protocol SpeechService: Sendable {
     /// do this without knowing which service they hold. Configuring the session lazily on the
     /// first utterance would make the first goal of a match pay for the setup.
     func activate() async
+
+    /// Gets speech going again after the app comes back to the foreground.
+    ///
+    /// Leaving the app cuts off the sentence being spoken, and the synthesiser does not always say
+    /// so. Without this, the voice waited for good on a sentence that would never finish, and the
+    /// list of moments kept growing in silence: from the listener's side, the app had died.
+    /// Found with the Acc-MobileCheck inspection (item O3).
+    func recoverAfterInterruption() async
 }
 
 /// Speech rate, exposed as named steps rather than raw float values.

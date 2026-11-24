@@ -197,6 +197,19 @@ actor AVSpeechService: SpeechService {
         await synthesizer().activateAudioSession()
     }
 
+    func recoverAfterInterruption() async {
+        // Bumped so a cue that was sounding when the app left does not lead into its sentence
+        // minutes later, out of context.
+        generation += 1
+        currentPriority = nil
+
+        await synthesizer().recover()
+
+        // The pump may have been released by `recover`, in which case it carries on by itself;
+        // if it had already ended, anything queued since needs a new one.
+        startPumpIfNeeded()
+    }
+
     // MARK: - Queueing
 
     private func enqueue(_ utterance: PendingUtterance) async {
@@ -309,6 +322,22 @@ private final class SpeechSynthesizerBox: NSObject, AVSpeechSynthesizerDelegate 
             // Speech still works with the default session in most cases, so a failure here
             // degrades quality rather than function. Worth surfacing in logs once there is a
             // logging facility; not worth failing the narration over.
+        }
+    }
+
+    /// Undoes what leaving the foreground did to speech.
+    ///
+    /// Two things break. The audio session may have been deactivated by the system, and the
+    /// sentence that was being spoken can be cut off without `didFinish` or `didCancel` ever
+    /// arriving, which leaves the pump waiting on it for the rest of the match. Reactivating the
+    /// session and stopping whatever is still pending releases that wait; losing the end of one
+    /// sentence is a far smaller cost than losing every sentence after it.
+    func recover() async {
+        didActivateSession = false
+        activateAudioSession()
+
+        if continuation != nil {
+            await stop()
         }
     }
 

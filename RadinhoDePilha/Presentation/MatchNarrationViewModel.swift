@@ -209,11 +209,36 @@ final class MatchNarrationViewModel {
         startLiveLoop(matchID: match.id)
     }
 
-    func stopNarrating() async {
+    /// Stops narration.
+    ///
+    /// - Parameter announces: Whether to say so. The listener pressing Parar needs to hear it:
+    ///   cutting the voice off mid-sentence, with nothing after it, sounds the same as the app
+    ///   failing (Acc-MobileCheck, item O8). The app switching matches on its own says nothing,
+    ///   because the next match announces itself.
+    func stopNarrating(announces: Bool = true) async {
+        let wasNarrating = isNarrating
+
         isNarrating = false
         liveTask?.cancel()
         liveTask = nil
         await speech.stopAll()
+
+        if announces, wasNarrating {
+            await speech.speakNow("Narração interrompida.", priority: .high)
+        }
+    }
+
+    /// Picks narration back up after the listener left the app and came back.
+    ///
+    /// Narration runs only in the foreground, so time away is time not heard. Saying where the
+    /// match stands is what lets the listener rejoin it: the moments that came in meanwhile are
+    /// already on the list, and without the score they would not know what they missed.
+    func returnedToForeground() async {
+        await speech.recoverAfterInterruption()
+
+        guard isNarrating, let match else { return }
+
+        await speech.speakNow("Narração retomada. \(scoreLine(for: match))", priority: .high)
     }
 
     /// Stops the loop without speaking, for when the screen goes away.
