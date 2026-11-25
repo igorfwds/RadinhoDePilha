@@ -172,7 +172,7 @@ struct RootView: View {
         Task {
             // Stops the replay and empties the queue, so nothing from 2022 is spoken over the
             // live match.
-            await viewModel.stopNarrating()
+            await viewModel.stopNarrating(announces: false)
 
             let session = MatchNarrationViewModel(
                 provider: live.provider,

@@ -119,6 +119,22 @@ nonisolated enum SportmonksMapper {
         return min(minutes, end)
     }
 
+    /// Minutes played past the scheduled end of the half now being played, or `nil` outside
+    /// stoppage time.
+    ///
+    /// The other half of ``elapsedMinutes(from:)``, which holds at the end of the half: together
+    /// they give the same "45+2" that the vendor writes on the events it reports itself, so a play
+    /// worked out from the totals sits in the right place among them.
+    static func stoppageMinutes(from periods: [SportmonksPeriod]) -> Int? {
+        guard let current = periods.first(where: { $0.ticking == true }),
+              let minutes = current.minutes
+        else { return nil }
+
+        let end = (current.countsFrom ?? 0) + (current.periodLength ?? 45)
+
+        return minutes > end ? minutes - end : nil
+    }
+
     // MARK: - Status
 
     /// Maps the vendor's numeric state onto the domain.

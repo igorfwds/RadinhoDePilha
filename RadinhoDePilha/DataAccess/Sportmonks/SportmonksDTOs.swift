@@ -39,11 +39,72 @@ nonisolated struct SportmonksFixture: Decodable, Sendable {
     /// in it: the timestamp means the same instant whatever the account settings say.
     let startingAtTimestamp: Int
 
-    // The four below arrive only when requested through `include`.
+    // The ones below arrive only when requested through `include`.
     let participants: [SportmonksParticipant]?
     let scores: [SportmonksScore]?
     let periods: [SportmonksPeriod]?
     let events: [SportmonksEvent]?
+
+    /// Running totals per team: corners, fouls, offsides.
+    let statistics: [SportmonksStatistic]?
+
+    /// Players in the squad, each with running totals of their own under `details`.
+    let lineups: [SportmonksLineup]?
+}
+
+// MARK: - Running totals
+//
+// Every field here is optional and the value never fails to decode. These totals only add detail
+// to the narration, and a surprise in their format must not cost the listener the goals: a
+// decoding failure anywhere in the payload would discard the whole response.
+
+/// A team total, such as corners won so far.
+nonisolated struct SportmonksStatistic: Decodable, Sendable {
+    let typeId: Int?
+    let participantId: Int?
+    let data: SportmonksCount?
+}
+
+/// A player in the match squad.
+nonisolated struct SportmonksLineup: Decodable, Sendable {
+    let playerId: Int?
+    let teamId: Int?
+    let playerName: String?
+    let details: [SportmonksLineupDetail]?
+}
+
+/// A player total, such as fouls committed so far.
+nonisolated struct SportmonksLineupDetail: Decodable, Sendable {
+    let typeId: Int?
+    let data: SportmonksCount?
+}
+
+/// The `{"value": 3}` wrapper the vendor puts around every total.
+///
+/// The value is a whole number for the totals the app reads, but other statistics use decimals,
+/// booleans or nested objects under the same key, so anything that is not a number reads as
+/// absent instead of failing.
+nonisolated struct SportmonksCount: Decodable, Sendable {
+    let value: Int?
+
+    private enum CodingKeys: String, CodingKey {
+        case value
+    }
+
+    init(from decoder: Decoder) throws {
+        guard let container = try? decoder.container(keyedBy: CodingKeys.self) else {
+            value = nil
+            return
+        }
+
+        if let whole = try? container.decode(Int.self, forKey: .value) {
+            value = whole
+        } else if let decimal = try? container.decode(Double.self, forKey: .value) {
+            value = Int(decimal)
+        } else {
+            value = nil
+        }
+    }
 }
 
 /// A team taking part in a fixture.

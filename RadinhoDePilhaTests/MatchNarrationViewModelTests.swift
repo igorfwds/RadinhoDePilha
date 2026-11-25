@@ -52,6 +52,12 @@ actor SpeechServiceSpy: SpeechService {
     func activate() async {
         activateCount += 1
     }
+
+    private(set) var recoverCount = 0
+
+    func recoverAfterInterruption() async {
+        recoverCount += 1
+    }
 }
 
 /// Always fails, to exercise error handling.
@@ -361,6 +367,58 @@ struct MatchNarrationViewModelTests {
 
         #expect(!viewModel.isNarrating)
         #expect(await spy.stopCount == 1)
+    }
+
+    @Test("Pressing stop says that narration stopped")
+    func stoppingIsAnnounced() async {
+        let (viewModel, spy) = makeViewModel()
+        await viewModel.load(matchID: SampleMatches.liveComeback.id)
+
+        await viewModel.startNarrating()
+        await viewModel.stopNarrating()
+
+        #expect(await spy.interruptingText.last == "Narração interrompida.")
+    }
+
+    @Test("Stopping is silent when the app switches matches, or when nothing was narrating")
+    func silentStops() async {
+        let (viewModel, spy) = makeViewModel()
+        await viewModel.load(matchID: SampleMatches.liveComeback.id)
+
+        await viewModel.stopNarrating()
+        await viewModel.startNarrating()
+        await viewModel.stopNarrating(announces: false)
+
+        #expect(await !spy.interruptingText.contains("Narração interrompida."))
+    }
+
+    // MARK: - Returning to the app
+
+    @Test("Coming back to the app recovers speech and says where the match stands")
+    func returningResumesNarration() async {
+        let (viewModel, spy) = makeViewModel()
+        await viewModel.load(matchID: SampleMatches.liveComeback.id)
+        await viewModel.startNarrating()
+
+        await viewModel.returnedToForeground()
+
+        #expect(await spy.recoverCount == 1)
+        let resumed = await spy.interruptingText.last ?? ""
+        #expect(resumed.hasPrefix("Narração retomada."))
+        #expect(resumed.contains("Náutico"))
+
+        await viewModel.stopNarrating()
+    }
+
+    @Test("Coming back without narration recovers speech but says nothing")
+    func returningWhileIdleIsSilent() async {
+        let (viewModel, spy) = makeViewModel()
+        await viewModel.load(matchID: SampleMatches.liveComeback.id)
+
+        await viewModel.returnedToForeground()
+
+        #expect(await spy.recoverCount == 1)
+        #expect(await spy.interruptingText.isEmpty)
     }
 
     // MARK: - Replay

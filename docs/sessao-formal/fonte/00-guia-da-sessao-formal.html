@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Guia da sessão formal de avaliação</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body class="tecnico">
+
+<h1>Guia da sessão formal de avaliação</h1>
+<p class="sub">Radinho de Pilha. Documento do pesquisador: explica como os demais documentos se encaixam.</p>
+
+<h2>O que é uma sessão formal</h2>
+<p>É o encontro planejado com um participante, com o mesmo roteiro para todos, consentimento por escrito ou gravado, a versão final do aplicativo e registro sistemático dos dados. Corresponde à atividade 12 do Capítulo 4: teste de usabilidade em aparelho real, seguido de entrevista semiestruturada, com participantes com deficiência visual.</p>
+<p>Os testes de campo anteriores (26/09 e 08/10) não seguiram este protocolo. Devem ser descritos no trabalho como piloto exploratório, e o código P1 já foi usado para a participante daquelas conversas. Se ela repetir a avaliação em sessão formal, mantém o código P1. Um novo participante será o P2.</p>
+
+<h2>Os documentos</h2>
+<table>
+  <tr><th style="width:30%">Documento</th><th style="width:16%">Para quem</th><th>Para que serve</th></tr>
+  <tr><td>01 Convite</td><td>Participante</td><td>Mensagem curta para convidar. Mandar com antecedência.</td></tr>
+  <tr><td>02 Termo de consentimento</td><td>Participante</td><td>Lido em voz alta e assinado, ou consentido de viva voz com gravação. Duas vias.</td></tr>
+  <tr><td>03 Questionário de perfil</td><td>Participante</td><td>Lido pelo pesquisador, que anota as respostas.</td></tr>
+  <tr><td>04 Roteiro de tarefas</td><td>Pesquisador</td><td>Falas de abertura, oito tarefas e a escuta de um trecho de partida.</td></tr>
+  <tr><td>05 Roteiro de entrevista</td><td>Pesquisador</td><td>Perguntas por tema, com sondas.</td></tr>
+  <tr><td>06 Ficha do observador</td><td>Pesquisador</td><td>Tabelas para preencher durante a sessão.</td></tr>
+</table>
+
+<h2>Roteiro do dia, cerca de 80 minutos</h2>
+<table>
+  <tr><th style="width:12%">Minutos</th><th style="width:34%">Etapa</th><th>Documento</th></tr>
+  <tr><td>10</td><td>Acolhida, leitura do termo, consentimento</td><td>02</td></tr>
+  <tr><td>5</td><td>Questionário de perfil</td><td>03</td></tr>
+  <tr><td>5</td><td>Abertura e treino de falar em voz alta</td><td>04, partes 1 e 2</td></tr>
+  <tr><td>20</td><td>Oito tarefas</td><td>04, parte 3, e ficha 06</td></tr>
+  <tr><td>25</td><td>Escuta de um trecho e perguntas ao fim</td><td>04, parte 4, e ficha 06</td></tr>
+  <tr><td>15</td><td>Entrevista e perguntas com nota</td><td>05</td></tr>
+</table>
+<p>Prever pausas. Se o participante cansar, encerrar a escuta mais cedo e registrar o motivo. Na escuta, o participante pode parar a qualquer momento e dizer "marca" quando algo chamar a sua atenção. O observador anota o horário, e esses momentos abrem o relato depois do trecho.</p>
+
+<h2>Material</h2>
+<ul class="opcoes">
+  <li>iPhone com a versão final, carregado, com voz aprimorada em português instalada.</li>
+  <li>Fones de ouvido e caixa de som, para o participante escolher.</li>
+  <li>Gravador de áudio testado com antecedência, com espaço livre.</li>
+  <li>Termo impresso em duas vias, em letra grande, e caneta. Versão digital para quem preferir leitor de tela.</li>
+  <li>Roteiros e uma ficha do observador impressos.</li>
+  <li>Lista de conferência do aparelho: modo avião testado, brilho, não perturbe ativo, bloqueio automático desligado.</li>
+</ul>
+
+<h2>Dois papéis</h2>
+<p>O ideal é ter duas pessoas: o facilitador, que conduz e conversa, e o observador, que só anota. Sozinho, o pesquisador conduz e usa a gravação de áudio para completar as anotações depois. Como o pesquisador é também o desenvolvedor, isso deve constar como limitação no trabalho.</p>
+
+<h2>Preparação, na véspera</h2>
+<ul class="opcoes">
+  <li>Instalar a versão final no iPhone e abrir uma vez. Com conta gratuita, a assinatura vence em 7 dias.</li>
+  <li>Definir a fonte de dados: partida ao vivo, ou gravação de 08/10.</li>
+  <li>Percorrer as oito tarefas uma vez, sozinho(a), cronometrando.</li>
+  <li>Conferir o contato do pesquisador nos documentos.</li>
+</ul>
+
+<h2>Para gerar os PDFs de novo</h2>
+<p>Os textos ficam na pasta <em>fonte</em>, em arquivos HTML. Depois de editar um texto, ou para colocar o e-mail e o telefone do pesquisador nos documentos 01 e 02, rodar:</p>
+<p>EMAIL="seu e-mail" TELEFONE="seu telefone" ./build.sh</p>
+<p>Sem esses dois valores, os documentos mostram marcadores visíveis no lugar do contato.</p>
+
+<h2>Decisões ainda em aberto</h2>
+<div class="caixa">
+  <ul>
+    <li><strong>Aprovação ética.</strong> Os documentos não afirmam nenhuma aprovação de comitê de ética. Confirmar com o orientador e com a coordenação se ela é exigida e, se for, ajustar o termo.</li>
+    <li><strong>Falar em voz alta.</strong> O roteiro usa essa técnica nas tarefas e relato depois, sem interromper, na escuta. Isso muda o que o Capítulo 4 prevê, e precisa do aval do orientador.</li>
+    <li><strong>Perguntas com nota.</strong> Incluídas no fim da entrevista, por decisão do pesquisador. Elas não constam da metodologia do Capítulo 4: descrever no texto e avisar o orientador.</li>
+    <li><strong>Guarda do áudio.</strong> O termo promete apagar o áudio depois de transcrito e conferido. Se a intenção for guardar por mais tempo, mudar o termo antes de usar.</li>
+    <li><strong>Pagamento e custos.</strong> O termo diz que não há pagamento nem custo. Se houver transporte pago ou outro apoio, mudar o termo.</li>
+    <li><strong>Aparelho do participante.</strong> O convite diz que a sessão usa um iPhone levado pelo pesquisador. O aplicativo exige iOS 26.</li>
+  </ul>
+</div>
+
+</body>
+</html>

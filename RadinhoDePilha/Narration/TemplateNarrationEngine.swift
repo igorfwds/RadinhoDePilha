@@ -326,11 +326,102 @@ nonisolated private extension TemplateNarrationEngine {
             periodStartSentence(for: event)
         case .periodEnd:
             periodEndSentence(for: event, in: match)
+        case .corner:
+            cornerSentence(for: event)
+        case .foul:
+            foulSentence(for: event, in: match)
+        case .offside:
+            offsideSentence(for: event)
+        case .foulAttribution:
+            foulAttributionSentence(for: event, in: match)
+        case .offsideAttribution:
+            offsideAttributionSentence(for: event)
         case .unknown:
             // Silence on purpose. Narration is a serial channel, and speaking an event the app
             // cannot describe would spend it on noise.
             nil
         }
+    }
+
+    // Corners, fouls and offsides are kept to a few words and carry no time reference. They
+    // happen dozens of times a match and are narrated as they happen, so a long sentence would
+    // still be playing when the next one arrives.
+
+    /// How to refer to a side in a short play: its name, its nickname or one of its epithets.
+    ///
+    /// Wider than ``spokenName(of:for:)`` because every sentence here puts the side after a
+    /// preposition, which is the one position an epithet works in. A foul and the sentence that
+    /// later names its players may well pick different forms, "falta do Náutico" and then "a
+    /// falta cometida pelo time alvirrubro", and that is how radio commentary sounds.
+    func playName(of team: Team, for event: MatchEvent) -> String {
+        pick(team.spokenNames + team.epithets, for: event, salt: "play-\(team.id)")
+    }
+
+    /// The player a foul was committed on, with the side he plays for.
+    ///
+    /// Said with the side because the listener has just heard the other one named as the
+    /// offender, and a bare surname leaves them to work out that he is an opponent.
+    func victim(_ name: String, of event: MatchEvent, in match: Match) -> String {
+        let opponent = event.team.id == match.homeTeam.id ? match.awayTeam : match.homeTeam
+
+        return "\(name), do \(playName(of: opponent, for: event))"
+    }
+
+    func cornerSentence(for event: MatchEvent) -> String {
+        "Escanteio para o \(playName(of: event.team, for: event))."
+    }
+
+    func foulSentence(for event: MatchEvent, in match: Match) -> String {
+        let team = playName(of: event.team, for: event)
+
+        switch (event.player, event.relatedPlayer) {
+        case let (offender?, suffered?):
+            return "Falta do \(team). \(offender) em \(victim(suffered, of: event, in: match))."
+        case let (offender?, nil):
+            return "Falta do \(team), de \(offender)."
+        case let (nil, suffered?):
+            return "Falta do \(team) em \(victim(suffered, of: event, in: match))."
+        case (nil, nil):
+            return "Falta do \(team)."
+        }
+    }
+
+    func offsideSentence(for event: MatchEvent) -> String {
+        let team = playName(of: event.team, for: event)
+
+        guard let player = event.player else { return "Impedimento do \(team)." }
+
+        return "Impedimento do \(team). \(player) estava adiantado."
+    }
+
+    // The two below complete a play that was announced without names. They name the side again
+    // because up to a minute may have passed, and "essa falta" alone would leave the listener
+    // wondering which one.
+
+    func foulAttributionSentence(for event: MatchEvent, in match: Match) -> String? {
+        let team = playName(of: event.team, for: event)
+        let opening = pick(
+            ["A falta do \(team)", "A falta cometida pelo \(team)"],
+            for: event,
+            salt: "opening"
+        )
+
+        switch (event.player, event.relatedPlayer) {
+        case let (offender?, suffered?):
+            return "\(opening) foi de \(offender), em \(victim(suffered, of: event, in: match))."
+        case let (offender?, nil):
+            return "\(opening) foi de \(offender)."
+        case let (nil, suffered?):
+            return "\(opening) foi em \(victim(suffered, of: event, in: match))."
+        case (nil, nil):
+            return nil
+        }
+    }
+
+    func offsideAttributionSentence(for event: MatchEvent) -> String? {
+        guard let player = event.player else { return nil }
+
+        return "O impedimento do \(playName(of: event.team, for: event)) foi de \(player)."
     }
 
     func goalSentence(for event: MatchEvent, in match: Match) -> String {
@@ -603,7 +694,7 @@ nonisolated private extension TemplateNarrationEngine {
             .high
         case .yellowCard, .substitution, .periodStart, .periodEnd:
             .normal
-        case .unknown:
+        case .corner, .foul, .offside, .foulAttribution, .offsideAttribution, .unknown:
             .low
         }
     }

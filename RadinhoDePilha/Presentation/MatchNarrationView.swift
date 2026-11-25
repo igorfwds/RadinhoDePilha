@@ -34,6 +34,20 @@ struct MatchNarrationView: View {
 
     @Namespace private var glassNamespace
 
+    /// Fill of the main button, dark enough for a white label to pass WCAG 1.4.3.
+    private static let actionBlue = Color(red: 0, green: 64 / 255, blue: 221 / 255)
+
+    @Environment(\.scenePhase) private var scenePhase
+
+    /// Whether the app went all the way to the background, not merely inactive.
+    ///
+    /// Pulling down Control Centre also makes the app inactive, and speech carries on through it;
+    /// announcing "narração retomada" after that would be noise.
+    @State private var leftForeground = false
+
+    /// Landscape on a phone, where the height left over is too short to stack everything.
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
     init(viewModel: MatchNarrationViewModel, settings: AppSettings, matchID: String) {
         self.viewModel = viewModel
         self.settings = settings
@@ -48,6 +62,17 @@ struct MatchNarrationView: View {
                 // Keyed on the identifier so that switching matches, which the live lookup does
                 // from another tab, reloads instead of leaving the previous match on screen.
                 .task(id: matchID) { await viewModel.load(matchID: matchID) }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            switch phase {
+            case .background:
+                leftForeground = true
+            case .active where leftForeground:
+                leftForeground = false
+                Task { await viewModel.returnedToForeground() }
+            default:
+                break
+            }
         }
     }
 
@@ -105,11 +130,31 @@ struct MatchNarrationView: View {
         .accessibilityElement(children: .combine)
     }
 
+    @ViewBuilder
     private func loaded(_ match: Match) -> some View {
-        VStack(spacing: 0) {
-            scoreboard(match)
-            eventList
-            controls
+        if verticalSizeClass == .compact {
+            // Side by side in landscape. Stacked, the scoreboard and the controls took the whole
+            // height and the list of moments was squeezed to nothing, while the voice went on
+            // narrating moments the screen no longer showed (Acc-MobileCheck, items P3 and A3).
+            // The left column scrolls, so large text cannot push the controls off screen either.
+            HStack(alignment: .top, spacing: 0) {
+                ScrollView {
+                    VStack(spacing: 0) {
+                        scoreboard(match)
+                        controls
+                    }
+                }
+                .frame(maxWidth: .infinity)
+
+                eventList
+                    .frame(maxWidth: .infinity)
+            }
+        } else {
+            VStack(spacing: 0) {
+                scoreboard(match)
+                eventList
+                controls
+            }
         }
     }
 
@@ -117,9 +162,12 @@ struct MatchNarrationView: View {
 
     private func scoreboard(_ match: Match) -> some View {
         VStack(spacing: 8) {
+            // Primary rather than secondary: over glass, secondary text failed the contrast audit
+            // in the default configuration (Accessibility Inspector, A2), and the competition
+            // and the state of the match are read, not decoration. Hierarchy comes from size.
             Text(match.competition.displayName)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.primary)
 
             // Side by side while it fits, stacked once it does not. A club name hyphenated across
             // two lines ("Náuti-co") is the first thing Dynamic Type breaks here, and this
@@ -136,7 +184,7 @@ struct MatchNarrationView: View {
 
                 Text(statusLine(match))
                     .font(.headline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
             }
         }
         .padding(20)
@@ -348,6 +396,10 @@ struct MatchNarrationView: View {
             .padding(.vertical, 10)
         }
         .buttonStyle(.glassProminent)
+        // White on the system blue is about 4:1, under the 4.5:1 the label needs at this size, and
+        // the button failed the contrast audit (Accessibility Inspector, A1). This darker blue
+        // gives about 7.6:1 in light and dark appearance alike.
+        .tint(Self.actionBlue)
         .glassEffectID("play", in: glassNamespace)
         // States the outcome, and states that live narration does not recount what already
         // happened, otherwise a listener joining at half-time would expect a recap and get
