@@ -1,0 +1,175 @@
+AUDIT|Padrão|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Padrão|Ajustes|tipo 1|48 "Narrador"|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Voz"|Contrast failed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Narração de rádio equilibrada, como a transmissão tradicional."|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Mais vibrante e exclamativa, como quem está na torcida."|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Mais sóbria e descritiva, com menos emoção e mais detalhe."|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Eddy"|Contrast failed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Qualidade compacta"|Contrast failed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Time"|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "O sinal toca uma vez para o mandante e duas vezes para o visitante."|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Sinais"|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Gol: uma vibração longa e forte."|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Cartão amarelo: duas vibrações curtas, de força média."|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Cartão vermelho: duas vibrações curtas e fortes, seguidas de uma longa."|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Substituição: três vibrações rápidas e leves."|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Pênalti perdido: uma vibração que vai crescendo."|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Decisão do VAR"|Contrast failed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Decisão do VAR: uma vibração contínua e leve."|Contrast failed
+AUDIT|Padrão|Aprender os sinais|tipo 1|48 "Início ou fim de tempo"|Contrast failed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Despejo periódico"|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Percorre a partida gravada em passos de 3 minutos e registra placar, situação e lances conhecidos em cada ponto. Serve para conferir o mapeamento dos dados sem gastar requisição da API."|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Simulação"|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Reproduz a partida gravada liberando um minuto de jogo por vez, como se estivesse acontecendo agora. É assim que a narração ao vivo e a fila de prioridade podem ser ouvidas antes de existir um jogo real para acompanhar."|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Ao vivo de verdade"|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Procura uma partida do Náutico pela Série B acontecendo agora. Se houver, a narração começa na aba Narração. Se não houver, o app diz quando é o próximo jogo."|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Gravações da Sportmonks"|Contrast failed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Respostas gravadas"|Contrast failed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Despejar a cada 3 minutos"|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|48 "Reproduzir partida ao vivo"|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Padrão|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Padrão|Simulação (preparo)|tipo 1|48 "Velocidade da simulação"|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 1|48 "A 2 segundos por minuto, uma partida inteira leva cerca de três minutos."|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 1|48 "Náutico × Operário, 25 lances gravados da Sportmonks."|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 1|48 "Começar a simulação"|Contrast nearly passed
+AUDIT|Padrão|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Padrão|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Padrão|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Padrão|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Padrão|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Padrão|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Texto no maior tamanho|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Texto no maior tamanho|Simulação (preparo)|tipo 1|-|Contrast failed
+AUDIT|Texto no maior tamanho|Narração (partida simulada)|tipo 1|48 "0"|Contrast failed
+AUDIT|Texto no maior tamanho|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Texto no maior tamanho|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Texto no maior tamanho|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|48 "Velocidade da simulação"|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|48 "Começar a simulação"|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Texto em Negrito|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Narrador"|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Voz"|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Narração de rádio equilibrada, como a transmissão tradicional."|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Mais vibrante e exclamativa, como quem está na torcida."|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Mais sóbria e descritiva, com menos emoção e mais detalhe."|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Eddy"|Contrast failed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Qualidade compacta"|Contrast failed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Time"|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "O sinal toca uma vez para o mandante e duas vezes para o visitante."|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Sinais"|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Gol: uma vibração longa e forte."|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Cartão amarelo: duas vibrações curtas, de força média."|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Cartão vermelho: duas vibrações curtas e fortes, seguidas de uma longa."|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Substituição: três vibrações rápidas e leves."|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Pênalti perdido: uma vibração que vai crescendo."|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Decisão do VAR"|Contrast failed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|48 "Decisão do VAR: uma vibração contínua e leve."|Contrast failed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Despejo periódico"|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Percorre a partida gravada em passos de 3 minutos e registra placar, situação e lances conhecidos em cada ponto. Serve para conferir o mapeamento dos dados sem gastar requisição da API."|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Simulação"|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Reproduz a partida gravada liberando um minuto de jogo por vez, como se estivesse acontecendo agora. É assim que a narração ao vivo e a fila de prioridade podem ser ouvidas antes de existir um jogo real para acompanhar."|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Ao vivo de verdade"|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Procura uma partida do Náutico pela Série B acontecendo agora. Se houver, a narração começa na aba Narração. Se não houver, o app diz quando é o próximo jogo."|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Gravações da Sportmonks"|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Respostas gravadas"|Contrast failed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Despejar a cada 3 minutos"|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|48 "Reproduzir partida ao vivo"|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|48 "Velocidade da simulação"|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|48 "A 2 segundos por minuto, uma partida inteira leva cerca de três minutos."|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|48 "Náutico × Operário, 25 lances gravados da Sportmonks."|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|48 "Começar a simulação"|Contrast nearly passed
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Operário"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Todos juntos|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Todos juntos|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Todos juntos|Simulação (preparo)|tipo 1|-|Contrast failed
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Operário"|Text clipped
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Aumentar Contraste|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Voz"|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Narração de rádio equilibrada, como a transmissão tradicional."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Mais vibrante e exclamativa, como quem está na torcida."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Mais sóbria e descritiva, com menos emoção e mais detalhe."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Qualidade aprimorada"|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Eddy"|Contrast failed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|48 "Qualidade compacta"|Contrast failed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Gol: uma vibração longa e forte."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Cartão amarelo: duas vibrações curtas, de força média."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Cartão vermelho: duas vibrações curtas e fortes, seguidas de uma longa."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Substituição: três vibrações rápidas e leves."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Pênalti perdido: uma vibração que vai crescendo."|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Decisão do VAR"|Contrast failed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Decisão do VAR: uma vibração contínua e leve."|Contrast failed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|48 "Início ou fim de tempo"|Contrast failed
+AUDIT|Aumentar Contraste|Modos de teste|tipo 1|48 "Gravações da Sportmonks"|Contrast failed
+AUDIT|Aumentar Contraste|Modos de teste|tipo 1|48 "Respostas gravadas"|Contrast failed
+AUDIT|Aumentar Contraste|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Aumentar Contraste|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text

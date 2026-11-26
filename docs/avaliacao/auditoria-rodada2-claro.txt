@@ -1,0 +1,175 @@
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Padrão|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Padrão|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Padrão|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 1|48 "Velocidade da simulação"|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 1|48 "Começar a simulação"|Contrast nearly passed
+AUDIT|Padrão|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Padrão|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Padrão|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Padrão|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Padrão|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Padrão|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Padrão|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Padrão|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Texto no maior tamanho|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Texto no maior tamanho|Simulação (preparo)|tipo 1|-|Contrast failed
+AUDIT|Texto no maior tamanho|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Texto no maior tamanho|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Texto no maior tamanho|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Aumentar Contraste|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Aumentar Contraste|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Aumentar Contraste|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Aumentar Contraste|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Aumentar Contraste|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Aumentar Contraste|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Aumentar Contraste|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 1|48 "Narrar ao vivo"|Contrast failed
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Aumentar Contraste|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|48 "Velocidade da simulação"|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 1|48 "Começar a simulação"|Contrast nearly passed
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Reduzir Transparência|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Reduzir Transparência|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Texto em Negrito|Ajustes|tipo 1|-|Contrast failed
+AUDIT|Texto em Negrito|Ajustes|tipo 65536|48 "Muda as palavras da narração, não a voz do aparelho. Toque no botão de play para ouvir o mesmo gol narrado em cada estilo."|Dynamic Type font sizes are partially unsupported
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Texto em Negrito|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Modos de teste|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|48 "Velocidade da simulação"|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|-|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 1|48 "Começar a simulação"|Contrast nearly passed
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 65536|48 "Começar a simulação"|Dynamic Type font sizes are partially unsupported
+AUDIT|Texto em Negrito|Simulação (preparo)|tipo 131072|48 "Começar a simulação"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 2|-|Potentially inaccessible text
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Texto em Negrito|Narração (partida simulada)|tipo 131072|48 "Operário"|Text clipped
+AUDIT|Todos juntos|Aprender os sinais|tipo 1|-|Contrast failed
+AUDIT|Todos juntos|Modos de teste|tipo 1|-|Contrast failed
+AUDIT|Todos juntos|Simulação (preparo)|tipo 1|-|Contrast failed
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Narrar ao vivo"|Text clipped
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Campeonato Brasileiro Série B"|Text clipped
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Operário"|Text clipped
+AUDIT|Todos juntos|Narração (partida simulada)|tipo 131072|48 "Primeiro tempo, 0 minutos"|Text clipped

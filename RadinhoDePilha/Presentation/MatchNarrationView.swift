@@ -136,18 +136,35 @@ struct MatchNarrationView: View {
             // Side by side in landscape. Stacked, the scoreboard and the controls took the whole
             // height and the list of moments was squeezed to nothing, while the voice went on
             // narrating moments the screen no longer showed (Acc-MobileCheck, items P3 and A3).
-            // The left column scrolls, so large text cannot push the controls off screen either.
+            //
+            // The speed picker moves under the list, so the left column fits above the tab bar
+            // instead of running underneath it. The left column only scrolls when it still does
+            // not fit, as with large text, so the controls are never pushed off screen.
             HStack(alignment: .top, spacing: 0) {
-                ScrollView {
+                ViewThatFits(in: .vertical) {
                     VStack(spacing: 0) {
                         scoreboard(match)
-                        controls
+                        actionButtons
+                            .padding(.horizontal)
+                        Spacer(minLength: 0)
+                    }
+
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            scoreboard(match)
+                            actionButtons
+                                .padding()
+                        }
                     }
                 }
                 .frame(maxWidth: .infinity)
 
-                eventList
-                    .frame(maxWidth: .infinity)
+                VStack(spacing: 0) {
+                    eventList
+                    ratePicker
+                        .padding([.horizontal, .bottom])
+                }
+                .frame(maxWidth: .infinity)
             }
         } else {
             VStack(spacing: 0) {
@@ -187,7 +204,7 @@ struct MatchNarrationView: View {
                     .foregroundStyle(.primary)
             }
         }
-        .padding(20)
+        .padding(verticalSizeClass == .compact ? 12 : 20)
         .modifier(AdaptiveGlass(cornerRadius: 28))
         .modifier(DisclosureGestures(viewModel: viewModel))
         .padding(.horizontal)
@@ -352,29 +369,36 @@ struct MatchNarrationView: View {
 
     private var controls: some View {
         VStack(spacing: 16) {
-            GlassEffectContainer(spacing: 12) {
-                HStack(spacing: 12) {
-                    playButton
-
-                    // Offered only before kick-off, when there is nothing to summarise yet and
-                    // the useful thing to hear is who plays whom and when.
-                    if viewModel.match?.status == .scheduled {
-                        previewButton
-                    }
-
-                    summaryButton
-                }
-            }
-
-            Picker("Velocidade da narração", selection: $settings.rate) {
-                ForEach(SpeechRate.allCases, id: \.self) { rate in
-                    Text(rate.displayName).tag(rate)
-                }
-            }
-            .pickerStyle(.segmented)
-            .accessibilityHint("Ajusta a velocidade da voz")
+            actionButtons
+            ratePicker
         }
         .padding()
+    }
+
+    private var actionButtons: some View {
+        GlassEffectContainer(spacing: 12) {
+            HStack(spacing: 12) {
+                playButton
+
+                // Offered only before kick-off, when there is nothing to summarise yet and
+                // the useful thing to hear is who plays whom and when.
+                if viewModel.match?.status == .scheduled {
+                    previewButton
+                }
+
+                summaryButton
+            }
+        }
+    }
+
+    private var ratePicker: some View {
+        Picker("Velocidade da narração", selection: $settings.rate) {
+            ForEach(SpeechRate.allCases, id: \.self) { rate in
+                Text(rate.displayName).tag(rate)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityHint("Ajusta a velocidade da voz")
     }
 
     private var playButton: some View {
@@ -395,11 +419,7 @@ struct MatchNarrationView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
         }
-        .buttonStyle(.glassProminent)
-        // White on the system blue is about 4:1, under the 4.5:1 the label needs at this size, and
-        // the button failed the contrast audit (Accessibility Inspector, A1). This darker blue
-        // gives about 7.6:1 in light and dark appearance alike.
-        .tint(Self.actionBlue)
+        .modifier(ProminentAction(tint: Self.actionBlue))
         .glassEffectID("play", in: glassNamespace)
         // States the outcome, and states that live narration does not recount what already
         // happened, otherwise a listener joining at half-time would expect a recap and get
@@ -501,6 +521,30 @@ private struct DisclosureGestures: ViewModifier {
 /// Transparency. That is not enough here: this app's audience is defined by low vision, so the
 /// fallback is an opaque surface with a visible border rather than a subtler glass. Increase
 /// Contrast is honoured for the same reason.
+/// The main button's surface: prominent glass normally, a solid fill under Increase Contrast.
+///
+/// White on the system blue is about 4:1, under the 4.5:1 the label needs at this size, so the
+/// fill is a darker blue, about 7.6:1 (Accessibility Inspector, A1). Under Increase Contrast the
+/// glass is drawn lighter and the label failed the audit again, so that mode gets the same blue as
+/// an opaque fill, which is what the setting asks for.
+private struct ProminentAction: ViewModifier {
+    let tint: Color
+
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        if contrast == .increased {
+            content
+                .buttonStyle(.borderedProminent)
+                .tint(tint)
+        } else {
+            content
+                .buttonStyle(.glassProminent)
+                .tint(tint)
+        }
+    }
+}
+
 private struct AdaptiveGlass: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast
