@@ -395,11 +395,7 @@ struct MatchNarrationView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 10)
         }
-        .buttonStyle(.glassProminent)
-        // White on the system blue is about 4:1, under the 4.5:1 the label needs at this size, and
-        // the button failed the contrast audit (Accessibility Inspector, A1). This darker blue
-        // gives about 7.6:1 in light and dark appearance alike.
-        .tint(Self.actionBlue)
+        .modifier(ProminentAction(tint: Self.actionBlue))
         .glassEffectID("play", in: glassNamespace)
         // States the outcome, and states that live narration does not recount what already
         // happened, otherwise a listener joining at half-time would expect a recap and get
@@ -501,6 +497,30 @@ private struct DisclosureGestures: ViewModifier {
 /// Transparency. That is not enough here: this app's audience is defined by low vision, so the
 /// fallback is an opaque surface with a visible border rather than a subtler glass. Increase
 /// Contrast is honoured for the same reason.
+/// The main button's surface: prominent glass normally, a solid fill under Increase Contrast.
+///
+/// White on the system blue is about 4:1, under the 4.5:1 the label needs at this size, so the
+/// fill is a darker blue, about 7.6:1 (Accessibility Inspector, A1). Under Increase Contrast the
+/// glass is drawn lighter and the label failed the audit again, so that mode gets the same blue as
+/// an opaque fill, which is what the setting asks for.
+private struct ProminentAction: ViewModifier {
+    let tint: Color
+
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    func body(content: Content) -> some View {
+        if contrast == .increased {
+            content
+                .buttonStyle(.borderedProminent)
+                .tint(tint)
+        } else {
+            content
+                .buttonStyle(.glassProminent)
+                .tint(tint)
+        }
+    }
+}
+
 private struct AdaptiveGlass: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.colorSchemeContrast) private var contrast

@@ -20,6 +20,13 @@ nonisolated final class AccessibilitySettingsMatrixUITests: XCTestCase {
         var boldText = false
     }
 
+    /// Light or dark appearance for the whole run, chosen with `TEST_RUNNER_APPEARANCE=dark` (or
+    /// `light`, the default) on the `xcodebuild` command line. Colours, and so contrast, differ
+    /// between the two, so each run states which one it measured.
+    private static var appearance: String {
+        ProcessInfo.processInfo.environment["APPEARANCE"] == "dark" ? "Dark" : "Light"
+    }
+
     override func setUpWithError() throws {
         continueAfterFailure = true
     }
@@ -50,7 +57,7 @@ nonisolated final class AccessibilitySettingsMatrixUITests: XCTestCase {
     @MainActor
     private func run(_ configuration: Configuration) {
         apply(configuration)
-        print("AUDIT-CONFIG|\(configuration.name)")
+        print("AUDIT-CONFIG|\(configuration.name)|\(Self.appearance)")
 
         let app = XCUIApplication()
         app.terminate()
@@ -102,17 +109,49 @@ nonisolated final class AccessibilitySettingsMatrixUITests: XCTestCase {
         setSwitch("Reduce Transparency", on: configuration.reduceTransparency, in: settings)
         setSwitch("Increase Contrast", on: configuration.increaseContrast, in: settings)
 
+        setAppearance(Self.appearance, in: settings)
+
         settings.terminate()
     }
 
-    /// Settings reopens on the last page it showed, so first walk back to the root.
+    /// Settings > Appearance. Reached from the root of Settings, like the rest.
     @MainActor
-    private func openDisplayAndTextSize(in settings: XCUIApplication) {
+    private func setAppearance(_ appearance: String, in settings: XCUIApplication) {
+        walkBackToRoot(in: settings)
+
+        // "Appearance" at the root of Settings since iOS 27; "Display & Brightness" before it.
+        let page = settings.buttons["com.apple.settings.appearance"].firstMatch
+        // Settings may reopen scrolled past the row, so look upwards first, then downwards.
+        var attempts = 0
+        while !(page.exists && page.isHittable) && attempts < 8 {
+            settings.swipeDown()
+            attempts += 1
+        }
+        scrollTo(page, in: settings)
+        page.tap()
+
+        let option = settings.descendants(matching: .any)[appearance].firstMatch
+        guard option.waitForExistence(timeout: 5) else {
+            XCTFail("Opção de aparência não encontrada: \(appearance)")
+            return
+        }
+        option.tap()
+        print("AUDIT-APPEARANCE|\(appearance)|selected=\(option.isSelected)|value=\(option.value ?? "-")")
+    }
+
+    @MainActor
+    private func walkBackToRoot(in settings: XCUIApplication) {
         for _ in 0..<6 {
             let back = settings.navigationBars.buttons.element(boundBy: 0)
             guard back.exists, back.isHittable, !settings.staticTexts["Settings"].isHittable else { break }
             back.tap()
         }
+    }
+
+    /// Settings reopens on the last page it showed, so first walk back to the root.
+    @MainActor
+    private func openDisplayAndTextSize(in settings: XCUIApplication) {
+        walkBackToRoot(in: settings)
 
         let accessibility = settings.descendants(matching: .any)["Accessibility"].firstMatch
         scrollTo(accessibility, in: settings)
